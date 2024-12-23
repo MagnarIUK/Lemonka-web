@@ -10,13 +10,28 @@ import java.io.InputStreamReader
 
 
 
-class SRTCounter( val srt: SRT){
+class SRTCounter( val srt: SRT, val characters: MutableList<String> = mutableListOf()){
 
     fun count_dialogs(): Int {
         var result = 0
-
-        srt.dialogs.forEach {
-            result+= it.actors.size
+        if(characters.size == 0) {
+            srt.dialogs.forEach {
+                if(it.actors.size > 0){
+                    result+= it.actors.size
+                } else{
+                    result+=1
+                }
+            }
+        } else{
+            srt.dialogs.filter { d ->
+                d.actors.any { actor -> actor in characters }
+            }.forEach {
+                if(it.actors.size > 0){
+                    result+= it.actors.size
+                } else{
+                    result+=1
+                }
+            }
         }
 
         return result
@@ -31,17 +46,44 @@ class SRTCounter( val srt: SRT){
             val actors = dialog.actors
             val texts = dialog.dialog?.replace(",", "")?.split(" ", "\\N")
             val actorsHere = actors.map { it.split("and", ",").map { it.trim() } }
-            texts?.forEach { text ->
-                var counterHere = 0
-                if( text.toIntOrNull() != null ){
-                    numbers.add(text.toInt())
-                } else{
-                    counterHere++
-                }
-                counterHere *= actorsHere.size
 
-                count+=counterHere
+
+
+            if (characters.size == 0) {
+                texts?.forEach { text ->
+                    var counterHere = 0
+                    if( text.toIntOrNull() != null ){
+                        numbers.add(text.toInt())
+                    } else{
+                        counterHere++
+                    }
+                    if(actors.size > 0){
+                        counterHere *= actorsHere.size
+                    }
+
+                    count+=counterHere
+                }
+            } else{
+                srt.dialogs.filter { d ->
+                    d.actors.any { actor -> actor in characters }
+                }.forEach {
+                    texts?.forEach { text ->
+                        var counterHere = 0
+                        if( text.toIntOrNull() != null ){
+                            numbers.add(text.toInt())
+                        } else{
+                            counterHere++
+                        }
+                        if(actors.size > 0){
+                            counterHere *= actorsHere.size
+                        }
+
+                        count+=counterHere
+                    }
+                }
             }
+
+
         }
 
         val numbers_counted: MutableList<Int> = mutableListOf()
@@ -74,7 +116,6 @@ class SRTParser(val input: InputStream, val name: String) {
 
         while (true) {
             val line = reader.readLine() ?: break
-
             when {
                 line.toIntOrNull() != null -> {
                     if (currentDialog.number != null) {
@@ -106,6 +147,10 @@ class SRTParser(val input: InputStream, val name: String) {
                             .map { it.trim() }
                             .toMutableList()
                         currentDialog.dialog = match.groupValues[2]
+                    } else {
+                        if(currentDialog.dialog == null && line != "" ) {
+                            currentDialog.dialog = line
+                        }
                     }
                 }
             }

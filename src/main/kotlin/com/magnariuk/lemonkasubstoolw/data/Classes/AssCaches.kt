@@ -8,7 +8,7 @@ data class Ass(
     var styles: Styles
 ) {
     fun getAllActors(): List<String> {
-        return events.dialogues.map { it.actor }
+        return events.dialogues.map { it.actor }.distinct()
     }
 }
 

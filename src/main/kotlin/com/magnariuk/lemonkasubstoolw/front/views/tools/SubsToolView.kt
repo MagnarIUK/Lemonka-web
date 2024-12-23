@@ -262,6 +262,8 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
                 })
             }
 
+
+
             val leftBar = VerticalLayout(
                 HorizontalLayout(
                     actorsSearchBox, addActorButton
@@ -439,6 +441,80 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
 
                 }
             }
+            val separateButton = Button("Розділити по персонажам").apply {
+                addThemeVariants(ButtonVariant.LUMO_TERTIARY)
+                onLeftClick {
+                    val createdFiles: MutableMap<String, StreamResource> = mutableMapOf()
+                    val projectX = cacheController.getCache()!!.projects.find { it.name == currentProject!!.name }!!.characters
+                    val assParser = ParserIS()
+
+                    if(selectFormat.value != null){
+                        when (selectFormat.value.format){
+                            "srt" -> {
+                                projectX.forEach { actor ->
+                                    val trier = assParser.createSubRip("${actor}.srt", ass!!, listOf(actor))
+                                    if(trier != null){
+                                        createdFiles["${actor}.srt"] = trier
+                                    }
+                                }
+                                val dialog = Dialog().apply {
+                                    headerTitle = "Завантажити готові файли"
+                                    val files = VerticalLayout().apply {}
+                                    createdFiles.forEach { file ->
+                                        val downloadButton = Button().apply {
+                                            icon = Icon(VaadinIcon.DOWNLOAD)
+                                            addThemeVariants(ButtonVariant.LUMO_ICON)
+                                            addThemeVariants(ButtonVariant.LUMO_PRIMARY)
+                                        }
+                                        val downloadWrapper = FileDownloadWrapper(file.value)
+                                        downloadWrapper.wrapComponent(downloadButton)
+
+                                        files.add(
+                                            HorizontalLayout(NativeLabel(file.key), downloadWrapper)
+                                        )
+                                    }
+                                    add(files)
+                                }
+                                dialog.open()
+                            }
+                            "ass" -> {
+                                projectX.forEach { actor ->
+                                    val trier = assParser.createAss("${actor}.ass", ass!!, listOf(actor))
+                                    if(trier != null){
+                                        createdFiles["${actor}.ass"] = trier
+                                    }
+                                }
+                                val dialog = Dialog().apply {
+                                    headerTitle = "Завантажити готові файли"
+                                    val files = VerticalLayout().apply {}
+                                    createdFiles.forEach { file ->
+                                        val downloadButton = Button().apply {
+                                            icon = Icon(VaadinIcon.DOWNLOAD)
+                                            addThemeVariants(ButtonVariant.LUMO_ICON)
+                                            addThemeVariants(ButtonVariant.LUMO_PRIMARY)
+                                        }
+                                        val downloadWrapper = FileDownloadWrapper(file.value)
+                                        downloadWrapper.wrapComponent(downloadButton)
+
+                                        files.add(
+                                            HorizontalLayout(NativeLabel(file.key), downloadWrapper)
+                                        )
+                                    }
+                                    add(files)
+                                }
+                                dialog.open()
+                            }
+                        }
+
+
+
+
+                    } else{
+                        showError("Оберіть формат субтитрів")
+                    }
+                }
+            }
+
 
             val rightBar = VerticalLayout(
                 HorizontalLayout(Button().apply {
@@ -447,8 +523,9 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
                     onLeftClick {
                         updateUI()
                     }
-                },charactersSelectorActorSearchBox, hideSelectedCharacters), charactersGrid,
-                HorizontalLayout(selectFormat,createButton).apply {
+                },charactersSelectorActorSearchBox, hideSelectedCharacters),
+                charactersGrid,
+                HorizontalLayout(selectFormat,createButton, separateButton).apply {
                     alignItems = Alignment.CENTER
                     justifyContentMode = JustifyContentMode.CENTER
                 }

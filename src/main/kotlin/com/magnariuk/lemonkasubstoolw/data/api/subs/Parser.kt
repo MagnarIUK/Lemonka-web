@@ -3,6 +3,7 @@ package com.magnariuk.lemonkasubstoolw.data.api.subs
 import com.magnariuk.lemonkasubstoolw.data.Classes.*
 import com.vaadin.flow.server.InputStreamFactory
 import com.vaadin.flow.server.StreamResource
+import com.magnariuk.lemonkasubstoolw.data.util.*
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.InputStream
@@ -475,10 +476,7 @@ class ParserIS {
     }
 
 
-    fun generateStreamResource(filename: String, lines: MutableList<String>): StreamResource {
-        val content = lines.joinToString(separator = System.lineSeparator())
-        return StreamResource(filename, InputStreamFactory {ByteArrayInputStream(content.toByteArray(StandardCharsets.UTF_8)) })
-    }
+
 
     fun createSubRip(filename: String, ass: Ass, characters: List<String>): StreamResource?{
         val lines: MutableList<String> = mutableListOf()
