@@ -10,7 +10,8 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 class CacheController {
-    private val cachePath: Path = Paths.get(System.getProperty("user.dir"), "cache.json")
+    private val cachePathStr: String = System.getenv("DB_PATH")?: System.getProperty("user.dir")
+    private val cachePath: Path = Paths.get(cachePathStr, "cache.json")
 
     init {
         if (!Files.exists(cachePath)) {

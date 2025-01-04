@@ -1,5 +1,5 @@
 package com.magnariuk.lemonkasubstoolw.data.api
-
+/*
 import com.google.api.client.auth.oauth2.Credential
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver
@@ -63,7 +63,7 @@ object SheetsQuickstart {
      */
     @Throws(IOException::class, GeneralSecurityException::class)
     @JvmStatic
-    fun main(args: Array<String>) {
+    fun wmain(args: Array<String>) {
         val HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport()
         val spreadsheetId = "1ivJL95xXmgrotpMylY5bKhKDc7IFtcGnic9IH4a9VWk"
         val range = "Расписание"
@@ -81,4 +81,4 @@ object SheetsQuickstart {
             println(values)
         }
     }
-}
+}*/
