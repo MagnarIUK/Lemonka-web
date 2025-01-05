@@ -4,6 +4,7 @@ data class Cache(
     var projects: MutableList<Project> = mutableListOf(),
     var actors: MutableList<String> = mutableListOf(),
     var hideSelected: Boolean = false,
+    var separators: MutableList<String> = mutableListOf("and", ",")
 )
 
 

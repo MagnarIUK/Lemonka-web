@@ -60,7 +60,7 @@ data class Dialogue(
     val startTime: String,
     val endTime: String,
     val style: String,
-    val actor: String,
+    var actor: String,
     val marginL: Int,
     val marginR: Int,
     val marginV: Int,

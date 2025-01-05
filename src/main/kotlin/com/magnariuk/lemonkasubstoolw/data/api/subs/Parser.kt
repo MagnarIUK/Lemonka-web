@@ -1,6 +1,7 @@
 package com.magnariuk.lemonkasubstoolw.data.api.subs
 
 import com.magnariuk.lemonkasubstoolw.data.Classes.*
+import com.magnariuk.lemonkasubstoolw.data.api.CacheController
 import com.vaadin.flow.server.InputStreamFactory
 import com.vaadin.flow.server.StreamResource
 import com.magnariuk.lemonkasubstoolw.data.util.*
@@ -475,8 +476,136 @@ class ParserIS {
         return null
     }
 
+    fun renameActors(ass: Ass, actors: MutableList<Actor>): StreamResource?{
+        val name = ass.subName
+        var newAss = ass.copy(subName = name+"_renamed")
+
+        ass.events.dialogues.forEach { dialogue ->
+            val separators = CacheController().getCache()!!.separators
+            val separationPattern = separators.joinToString("|") { Regex.escape(it) }
+            val actors_splitted = dialogue.actor.split(Regex(separationPattern)).map { it.trim() }
+
+            val characterToActorMap = mutableMapOf<String, String>()
+            actors.forEach { actor ->
+                actor.characterNames.forEach { character ->
+                    characterToActorMap[character] = actor.actorName
+                }
+            }
+
+            val converted: MutableList<String> = mutableListOf()
+            actors_splitted.forEach { character ->
+                val newActorName = characterToActorMap[character]
+                if (newActorName != null) {
+                    converted.add(newActorName)
+                } else {
+                    converted.add(character)
+                }
+            }
+
+            val newDialogue = converted.joinToString(separator = " та ")
+            dialogue.actor = newDialogue
+        }
 
 
+        val lines: MutableList<String> = mutableListOf()
+        lines.add("[Script Info]")
+        lines.add("Title: ${newAss.scriptInfo.Title}")
+        lines.add("ScriptType: ${newAss.scriptInfo.ScriptType}")
+        lines.add("WrapStyle: ${newAss.scriptInfo.WrapStyle}")
+        lines.add("ScaledBorderAndShadow: ${newAss.scriptInfo.ScaledBorderAndShadow}")
+        lines.add("PlayResX: ${newAss.scriptInfo.PlayResX}")
+        lines.add("PlayResY: ${newAss.scriptInfo.PlayResY}")
+        lines.add("YCbCr Matrix: ${newAss.scriptInfo.YCbCrMatrix}")
+        lines.add("")
+        lines.add("[Aegisub Project Garbage]")
+        lines.add("Last Style Storage: ${newAss.aegisubProjectGarbage.LastStyleStorage}")
+        lines.add("Audio File: ${newAss.aegisubProjectGarbage.AudioFile}")
+        lines.add("Video File: ${newAss.aegisubProjectGarbage.VideoFile}")
+        lines.add("Video AR Mode: ${newAss.aegisubProjectGarbage.VideoARMode}")
+        lines.add("Video AR Value: ${newAss.aegisubProjectGarbage.VideoARValue}")
+        lines.add("Video Zoom Percent: ${newAss.aegisubProjectGarbage.VideoZoomPercent}")
+        lines.add("Scroll Position: ${newAss.aegisubProjectGarbage.ScrollPosition}")
+        lines.add("Active Line: ${newAss.aegisubProjectGarbage.ActiveLine}")
+        lines.add("Video Position: ${newAss.aegisubProjectGarbage.VideoPosition}")
+        lines.add("")
+        lines.add("[V4+ Styles]")
+        lines.add("Format: ${newAss.styles.format}")
+
+        val formatStyles = newAss.styles.format.split(",").map { it.trim() }
+        newAss.styles.styleList.forEach { style ->
+            val styleValues = formatStyles.map { field ->
+                when (field) {
+                    "Name" -> style.name
+                    "Fontname" -> style.fontName
+                    "Fontsize" -> style.fontSize.toString()
+                    "PrimaryColour" -> style.primaryColour
+                    "SecondaryColour" -> style.secondaryColour
+                    "OutlineColour" -> style.outlineColour
+                    "BackColour" -> style.backColour
+                    "Bold" -> style.bold
+                    "Italic" -> style.italic
+                    "Underline" -> style.underline
+                    "StrikeOut" -> style.strikeOut
+                    "ScaleX" -> style.scaleX.toString()
+                    "ScaleY" -> style.scaleY.toString()
+                    "Spacing" -> style.spacing.toString()
+                    "Angle" -> style.angle.toString()
+                    "BorderStyle" -> style.borderStyle.toString()
+                    "Outline" -> style.outline.toString()
+                    "Shadow" -> style.shadow.toString()
+                    "Alignment" -> style.alignment.toString()
+                    "MarginL" -> style.marginL.toString()
+                    "MarginR" -> style.marginR.toString()
+                    "MarginV" -> style.marginV.toString()
+                    "Encoding" -> style.encoding.toString()
+                    else -> ""//TODO
+                }
+            }
+            lines.add("Style: ${styleValues.joinToString(",")}")
+        }
+        lines.add("")
+        lines.add("[Events]")
+        val formatEvents = newAss.events.format.map { it.trim() }
+        lines.add("Format: ${formatEvents.joinToString(",")}")
+        newAss.events.comments.forEach { comment ->
+            val commentValues = formatEvents.map { field ->
+                when(field) {
+                    "Layer" -> comment.layer.toString()
+                    "Start" -> comment.startTime
+                    "End" -> comment.endTime
+                    "Style" -> comment.style
+                    "MarginL" -> comment.marginL
+                    "MarginR" -> comment.marginR
+                    "MarginV" -> comment.marginV
+                    "Effect" -> comment.effect
+                    "Text" -> comment.text
+                    else -> ""//TODO
+                }
+            }
+            lines.add("Comment: ${commentValues.joinToString(",")}")
+        }
+
+        newAss.events.dialogues.forEach { dialogue ->
+                val dialogueValues = formatEvents.map { field ->
+                    when(field) {
+                        "Layer" -> dialogue.layer.toString()
+                        "Start" -> dialogue.startTime
+                        "End" -> dialogue.endTime
+                        "Style" -> dialogue.style
+                        "Name" -> dialogue.actor
+                        "MarginL" -> dialogue.marginL
+                        "MarginR" -> dialogue.marginR
+                        "MarginV" -> dialogue.marginV
+                        "Effect" -> dialogue.effect
+                        "Text" -> dialogue.text
+                        else -> ""//TODO
+                    }
+                }
+                lines.add("Dialogue: ${dialogueValues.joinToString(",")}")
+            }
+
+        return generateStreamResource(newAss.subName, lines)
+    }
 
     fun createSubRip(filename: String, ass: Ass, characters: List<String>): StreamResource?{
         val lines: MutableList<String> = mutableListOf()

@@ -216,11 +216,13 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
 
                 addColumn(ComponentRenderer {actorX ->
                     val addButton = Button().apply {
-                        val c = cacheController.getCache()!!
-                        val project = c.projects.find { it.name == currentProject!!.name }!!
+                        var c = cacheController.getCache()!!
+                        var project = c.projects.find { it.name == currentProject!!.name }!!
                         if (project.actors.contains(actorX)) {
                             icon = Icon(VaadinIcon.MINUS)
                             onLeftClick {
+                                c = cacheController.getCache()!!
+                                project = c.projects.find { it.name == currentProject!!.name }!!
                                 if(project.actors.contains(actorX)) {
                                     val actorToRemove = project.selected.find { it.actorName == actorX }!!
                                     project.selected.remove(actorToRemove)
@@ -233,6 +235,8 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
                         } else {
                             icon = Icon(VaadinIcon.PLUS)
                             onLeftClick {
+                                c = cacheController.getCache()!!
+                                project = c.projects.find { it.name == currentProject!!.name }!!
                                 if(!project.actors.contains(actorX)) {
                                     project.selected.add(Actor(actorX))
                                     project.actors.add(actorX)
@@ -244,7 +248,6 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
                         }
 
                         addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_PRIMARY)
-
                     }
                     val deleteButton = Button().apply {
                         icon = Icon(VaadinIcon.TRASH)
@@ -341,7 +344,7 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
 
                         addValueChangeListener { event ->
                             val c = cacheController.getCache()!!
-                            val cProject = c.projects.find { it.name == currentProject!!.name }!!.selected!!
+                            val cProject = c.projects.find { it.name == currentProject!!.name }!!.selected
                             val cCharacters = cProject.find { it.actorName == actorX.actorName }!!
                             cCharacters.characterNames.clear()
                             cCharacters.characterNames.addAll(event.value)
@@ -364,6 +367,27 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
                 setItemLabelGenerator { it.value }
                 isRequired = true
                 isRequiredIndicatorVisible = true
+            }
+
+            val renameButton = Button("Перейменувати акторів").apply {
+                onLeftClick {
+                    val projectX = cacheController.getCache()!!.projects.find { it.name == currentProject!!.name }!!.selected
+                    val assParser = ParserIS()
+                    val file = assParser.renameActors(ass!!, projectX)
+                    val dialog = Dialog().apply {
+                        headerTitle = "Завантажити готовий файл"
+
+                        val downloadButton = Button().apply {
+                            icon = Icon(VaadinIcon.DOWNLOAD)
+                            addThemeVariants(ButtonVariant.LUMO_ICON)
+                            addThemeVariants(ButtonVariant.LUMO_PRIMARY)
+                        }
+                        val downloadWrapper = FileDownloadWrapper(file)
+                        downloadWrapper.wrapComponent(downloadButton)
+                        add(NativeLabel(file!!.name), downloadWrapper)
+                    }
+                    dialog.open()
+                }
             }
 
             val createButton = Button("Створити субтитри").apply {
@@ -525,10 +549,20 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
                     }
                 },charactersSelectorActorSearchBox, hideSelectedCharacters),
                 charactersGrid,
-                HorizontalLayout(selectFormat,createButton, separateButton).apply {
+                VerticalLayout(
+                    HorizontalLayout(selectFormat,createButton, separateButton).apply {
+                        alignItems = Alignment.CENTER
+                        justifyContentMode = JustifyContentMode.CENTER
+                    },
+                    HorizontalLayout(renameButton).apply {
+                        alignItems = Alignment.CENTER
+                        justifyContentMode = JustifyContentMode.CENTER
+                    }
+                ).apply {
                     alignItems = Alignment.CENTER
                     justifyContentMode = JustifyContentMode.CENTER
                 }
+
             ).apply {
                 width = 800.px
                 alignItems = Alignment.CENTER
