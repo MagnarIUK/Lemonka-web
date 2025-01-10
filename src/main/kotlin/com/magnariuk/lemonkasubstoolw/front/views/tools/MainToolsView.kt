@@ -1,6 +1,7 @@
 package com.magnariuk.lemonkasubstoolw.front.views.tools
 
 import com.github.mvysny.karibudsl.v10.onLeftClick
+import com.magnariuk.lemonkasubstoolw.front.util.MainLayout
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.button.ButtonVariant
@@ -11,7 +12,7 @@ import com.vaadin.flow.router.PageTitle
 import com.vaadin.flow.router.Route
 
 @PageTitle("Lemonka Tools")
-@Route("/tools")
+@Route("/tools", layout = MainLayout::class)
 class MainToolsView : VerticalLayout() {
     init {
         val button = Button("Розділення субтитрів").apply {

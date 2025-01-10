@@ -21,6 +21,8 @@ object CSS {
     const val MARGIN_LEFT = "margin-left"
     const val MARGIN_RIGHT = "margin-right"
     const val SOLID = "solid"
+    const val FONT_SIZE = "font-size"
+    const val OUTLINE = "outline"
 
 }
 object COLORS{

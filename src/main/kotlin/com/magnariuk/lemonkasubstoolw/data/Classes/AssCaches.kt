@@ -32,7 +32,7 @@ data class Style(
     var scaleX: Int,
     var scaleY: Int,
     var spacing: Int,
-    var angle: Int,
+    var angle: Float,
     var borderStyle: Int,
     var outline: Number,
     var shadow: Number,

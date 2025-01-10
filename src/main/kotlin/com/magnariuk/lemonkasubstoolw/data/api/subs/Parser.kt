@@ -94,7 +94,7 @@ class Parser {
             scaleX = values[formatFields.indexOf("ScaleX")].toInt(),
             scaleY = values[formatFields.indexOf("ScaleY")].toInt(),
             spacing = values[formatFields.indexOf("Spacing")].toInt(),
-            angle = values[formatFields.indexOf("Angle")].toInt(),
+            angle = values[formatFields.indexOf("Angle")].toFloat(),
             borderStyle = values[formatFields.indexOf("BorderStyle")].toInt(),
             outline = values[formatFields.indexOf("Outline")].toFloat(),
             shadow = values[formatFields.indexOf("Shadow")].toFloat(),
@@ -294,7 +294,7 @@ class ParserIS {
             scaleX = values[formatFields.indexOf("ScaleX")].toInt(),
             scaleY = values[formatFields.indexOf("ScaleY")].toInt(),
             spacing = values[formatFields.indexOf("Spacing")].toInt(),
-            angle = values[formatFields.indexOf("Angle")].toInt(),
+            angle = values[formatFields.indexOf("Angle")].toFloat(),
             borderStyle = values[formatFields.indexOf("BorderStyle")].toInt(),
             outline = values[formatFields.indexOf("Outline")].toFloat(),
             shadow = values[formatFields.indexOf("Shadow")].toFloat(),
@@ -478,7 +478,10 @@ class ParserIS {
 
     fun renameActors(ass: Ass, actors: MutableList<Actor>): StreamResource?{
         val name = ass.subName
-        var newAss = ass.copy(subName = name+"_renamed")
+        val name_ = File(ass.subName).nameWithoutExtension
+        val ex_ = File(ass.subName).extension
+
+        var newAss = ass.copy(subName = name_+"_renamed."+ex_)
 
         ass.events.dialogues.forEach { dialogue ->
             val separators = CacheController().getCache()!!.separators
