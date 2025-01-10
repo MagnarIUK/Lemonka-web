@@ -9,7 +9,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
-class CacheController {
+/*class CacheController {
     private val cachePathStr: String = System.getenv("DB_PATH")?: System.getProperty("user.dir")
     private val cachePath: Path = Paths.get(cachePathStr, "cache.json")
 
@@ -49,4 +49,4 @@ class CacheController {
             return cache
         }
     }
-}
+}*/

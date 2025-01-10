@@ -93,13 +93,7 @@
             <artifactId>exposed-core</artifactId>
             <version>0.55.0</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.jetbrains.exposed/exposed-jdbc -->
-        <dependency>
-            <groupId>org.jetbrains.exposed</groupId>
-            <artifactId>exposed-jdbc</artifactId>
-            <version>0.55.0</version>
-            <scope>runtime</scope>
-        </dependency>
+
         <!-- https://mvnrepository.com/artifact/org.jetbrains.exposed/exposed-dao -->
         <dependency>
             <groupId>org.jetbrains.exposed</groupId>
@@ -107,6 +101,20 @@
             <version>0.55.0</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/org.jetbrains.exposed/exposed-jdbc -->
+        <dependency>
+            <groupId>org.jetbrains.exposed</groupId>
+            <artifactId>exposed-jdbc</artifactId>
+            <version>0.55.0</version>
+            <scope>runtime</scope>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <version>3.47.2.0</version>
+        </dependency>
 
         <!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
         <dependency>

@@ -23,7 +23,6 @@ object CSS {
     const val SOLID = "solid"
     const val FONT_SIZE = "font-size"
     const val OUTLINE = "outline"
-
 }
 object COLORS{
     const val BLUE = "blue"

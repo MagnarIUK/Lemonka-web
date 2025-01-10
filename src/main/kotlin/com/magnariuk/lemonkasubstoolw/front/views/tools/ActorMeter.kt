@@ -3,7 +3,7 @@ package com.magnariuk.lemonkasubstoolw.front.views.tools
 import com.github.mvysny.karibudsl.v10.KComposite
 import com.github.mvysny.karibudsl.v10.onLeftClick
 import com.github.mvysny.karibudsl.v10.verticalLayout
-import com.magnariuk.lemonkasubstoolw.data.Classes.Project
+import com.magnariuk.lemonkasubstoolw.data.api.*
 import com.vaadin.flow.component.orderedlayout.FlexComponent
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode
@@ -13,10 +13,12 @@ import com.vaadin.flow.router.BeforeEnterObserver
 import com.magnariuk.lemonkasubstoolw.data.Classes.SRT
 import com.magnariuk.lemonkasubstoolw.data.Classes.Actor
 import com.magnariuk.lemonkasubstoolw.data.Classes.Ass
+import com.magnariuk.lemonkasubstoolw.data.api.database.ApiService
+import com.magnariuk.lemonkasubstoolw.data.api.database.Character
+import com.magnariuk.lemonkasubstoolw.data.api.database.Project
 import com.magnariuk.lemonkasubstoolw.data.api.subs.SRTParser
 import com.magnariuk.lemonkasubstoolw.data.util.*
 import com.magnariuk.lemonkasubstoolw.data.api.subs.SRTCounter
-import com.magnariuk.lemonkasubstoolw.data.api.CacheController
 import com.magnariuk.lemonkasubstoolw.data.api.subs.ASSCounter
 import com.magnariuk.lemonkasubstoolw.data.api.subs.ParserIS
 import com.magnariuk.lemonkasubstoolw.data.util.showError
@@ -35,6 +37,7 @@ import com.vaadin.flow.component.upload.Upload
 import com.vaadin.flow.component.upload.receivers.MultiFileMemoryBuffer
 import com.vaadin.flow.router.PageTitle
 import com.vaadin.flow.router.Route
+import org.springframework.beans.factory.annotation.Autowired
 import org.vaadin.olli.FileDownloadWrapper
 import java.awt.Checkbox
 import java.io.File
@@ -42,13 +45,14 @@ import kotlin.reflect.jvm.internal.impl.util.Check
 
 @Route("/tools/calculator", layout = MainLayout::class)
 @PageTitle("Рахівниця")
-class ActorMeter: KComposite(), BeforeEnterObserver {
+class ActorMeter(
+    @Autowired private val api: ApiService
+): KComposite(), BeforeEnterObserver {
     private lateinit var dynamicLayout: VerticalLayout
     private var srt: MutableList<SRT> = mutableListOf()
     private var ass: MutableList<Ass> = mutableListOf()
-    private val cacheController = CacheController()
     private var selectedProject: Project? = null
-    private var selectedCharacters: MutableList<String> = mutableListOf()
+    private var selectedCharacters: MutableList<Character> = mutableListOf()
 
     private val root = ui {
         verticalLayout {
@@ -87,20 +91,20 @@ class ActorMeter: KComposite(), BeforeEnterObserver {
 
             val countAllCharacters = com.vaadin.flow.component.checkbox.Checkbox("Врахувати всіх персонажів у субтитрах")
 
-            val actorSelector = MultiSelectComboBox<String>().apply {
+            val actorSelector = MultiSelectComboBox<Character>().apply {
                 label = "Оберіть персонажів"
-                setItemLabelGenerator { it }
+                setItemLabelGenerator { it.name }
                 isRequired = true
                 isRequiredIndicatorVisible = true
             }
 
             val projectSelector = ComboBox<Project>().apply {
                 label = "Оберіть проєкт"
-                setItems(cacheController.getCache()!!.projects)
+                setItems(api.getProjects())
                 setItemLabelGenerator { it.name }
 
                 addValueChangeListener { value ->
-                    actorSelector.setItems(value.value.characters)
+                    actorSelector.setItems(api.getProjectCharacters(value.value.id))
                 }
                 isRequired = true
                 isRequiredIndicatorVisible = true
@@ -128,8 +132,8 @@ class ActorMeter: KComposite(), BeforeEnterObserver {
                                                 counters = srt.map { SRTCounter(it) }
                                                 assCounters = ass.map { ASSCounter(it) }
                                             } else{
-                                                counters = srt.map { SRTCounter(it, selectedCharacters) }
-                                                assCounters = ass.map { ASSCounter(it, selectedCharacters) }
+                                                counters = srt.map { SRTCounter(it, selectedCharacters.map { it.name }.toMutableList()) }
+                                                assCounters = ass.map { ASSCounter(it, selectedCharacters.map { it.name }.toMutableList()) }
                                             }
 
 
@@ -146,7 +150,7 @@ class ActorMeter: KComposite(), BeforeEnterObserver {
                                             numbers.value+="Числа рекомендується перевірити вручну!\n"
 
                                             counters.forEach { counter ->
-                                                val n = counter.count()
+                                                val n = counter.count(api.getSeparators().map { it.separator })
                                                 val r = counter.count_dialogs()
                                                 allCount+= n["words"]!!.toInt()
                                                 allDialogs+=r

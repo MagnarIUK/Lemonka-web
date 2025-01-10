@@ -3,10 +3,8 @@ package com.magnariuk.lemonkasubstoolw.front.views.tools
 import com.github.mvysny.karibudsl.v10.KComposite
 import com.github.mvysny.karibudsl.v10.onLeftClick
 import com.github.mvysny.karibudsl.v10.verticalLayout
-import com.magnariuk.lemonkasubstoolw.data.Classes.Actor
 import com.magnariuk.lemonkasubstoolw.data.Classes.Ass
-import com.magnariuk.lemonkasubstoolw.data.Classes.Project
-import com.magnariuk.lemonkasubstoolw.data.api.CacheController
+import com.magnariuk.lemonkasubstoolw.data.api.database.*
 import com.magnariuk.lemonkasubstoolw.data.api.subs.ParserIS
 import com.magnariuk.lemonkasubstoolw.data.util.*
 import com.magnariuk.lemonkasubstoolw.data.util.enum.SubTypes
@@ -33,16 +31,18 @@ import com.vaadin.flow.data.provider.ListDataProvider
 import com.vaadin.flow.data.renderer.ComponentRenderer
 import com.vaadin.flow.router.*
 import com.vaadin.flow.server.StreamResource
+import org.springframework.beans.factory.annotation.Autowired
 import java.io.File
 import org.vaadin.olli.FileDownloadWrapper
 
 @PageTitle("Субтитри")
 @Route("/tools/sub", layout = MainLayout::class)
-class SubsToolView: KComposite(), BeforeEnterObserver {
-    private var cacheController = CacheController()
+class SubsToolView(
+    @Autowired private val api: ApiService
+): KComposite(), BeforeEnterObserver {
     private lateinit var dynamicLayout: VerticalLayout
     private var ass: Ass? = null
-    private var hideSelected = cacheController.getCache()!!.hideSelected
+    private var hideSelected = api.getSettings().hideSelected
     private var currentProject: Project? = null
 
     override fun beforeEnter(p0: BeforeEnterEvent?) {
@@ -84,7 +84,7 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
             }
             val projectSelector = ComboBox<Project>().apply {
                 label = "Оберіть проєкт"
-                setItems(cacheController.getCache()!!.projects + Project("Додати новий"))
+                setItems(api.getProjects() + Project(1000000, "Додати новий"))
                 setItemLabelGenerator { it.name }
                 isRequired = true
                 isRequiredIndicatorVisible = true
@@ -98,7 +98,7 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
                 onLeftClick {
                     if(ass != null) {
                         if(projectSelector.value != null) {
-                            if (projectSelector.value.name == "Додати новий") {
+                            if (projectSelector.value.id == 1000000) {
                                 val dialog = Dialog().apply {
                                     width = 25.p
                                     height = 30.p
@@ -114,24 +114,21 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
                                             Button("Підтвердити").apply {
                                                 addThemeVariants(ButtonVariant.LUMO_PRIMARY)
                                                 onLeftClick {
-                                                    val c = cacheController.getCache()!!
-                                                    val newProject = Project(projectNameField.value.trim())
-                                                    if(c.projects.find { it.name == newProject.name } == null) {
+                                                    if(api.getProjectByName(projectNameField.value.trim()) == null) {
+                                                        val newProject = api.getProject(api.createProject(projectNameField.value.trim()))
+                                                        currentProject = newProject
                                                         val assActors = ass!!.getAllActors().distinct().toMutableList()
                                                         assActors.forEach { character ->
-                                                            val splitCharacters = character.split("and", ",").map { it.trim() }
+                                                            val separs = api.getSeparators().map { it.separator }
+                                                            val splitCharacters = character.split(*separs.toTypedArray()).map { it.trim() }
                                                             splitCharacters.forEach {
-                                                                if(!newProject.characters.contains(it)){
-                                                                    newProject.characters.add(it)
+                                                                if(api.getCharacterByName(it, currentProject!!.id) == null){
+                                                                    api.addCharacter(it, newProject.id)
                                                                 }
                                                             }
                                                         }
-
-                                                        c.projects.add(newProject)
-                                                        cacheController.saveCache(c)
-                                                        currentProject = newProject
-                                                        updateUI()
                                                         close()
+                                                        updateUI()
                                                     } else {
                                                         showError("Проєкт з таким ім'ям вже існує")
                                                     }
@@ -151,19 +148,19 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
                                 dialog.open()
 
                             } else {
-                                val c = cacheController.getCache()!!
-                                val projectX = c.projects.find { it.name == projectSelector.value.name }!!
+
+                                val projectX = api.getProject(projectSelector.value.id)
                                 val assActors = ass!!.getAllActors().distinct().toMutableList()
                                 assActors.forEach { character ->
-                                    val splitCharacters = character.split("and", ",").map { it.trim() }
+                                    val separs = api.getSeparators().map { it.separator }
+                                    val splitCharacters = character.split(*separs.toTypedArray()).map { it.trim() }
                                     splitCharacters.forEach {
-                                        if(!projectX.characters.contains(it)){
-                                            projectX.characters.add(it)
+                                        if(api.getCharacterByName(it, projectX.id) == null){
+                                            api.addCharacter(it, projectX.id)
                                         }
                                     }
                                 }
-                                cacheController.saveCache(c)
-                                currentProject =  cacheController.getCache()!!.projects.find { it.name == projectSelector.value.name }
+                                currentProject = projectX
                                 updateUI()
                             }
                         } else {
@@ -180,14 +177,14 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
             }
             dynamicLayout.add(chooseSubHolder)
         } else {
-            val actorsDataProvider = ListDataProvider(cacheController.getCache()!!.actors)
+            val actorsDataProvider = ListDataProvider(api.getActors())
             val actorsSearchBox = TextField().apply {
                 placeholder = "Актор..."
 
                 addValueChangeListener { event ->
                     val filterText = event.value ?: ""
                     actorsDataProvider.setFilter { actor ->
-                        actor.contains(filterText, true)
+                        actor.actorName.contains(filterText, true)
                     }
                 }
             }
@@ -195,16 +192,15 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
                 icon = Icon(VaadinIcon.FILE_ADD)
                 addThemeVariants(ButtonVariant.LUMO_PRIMARY)
                 onLeftClick {
-                    if(!cacheController.getCache()!!.actors.contains(actorsSearchBox.value.trim())){
-                        val cacheOld = cacheController.getCache()!!
-                        cacheOld.actors.add(actorsSearchBox.value.trim())
-                        cacheController.saveCache(cacheOld)
-                        actorsDataProvider.items.add(actorsSearchBox.value.trim())
+                    if(api.getActorByName(actorsSearchBox.value.trim()) == null){
+                        api.addActor(actorsSearchBox.value.trim())
+                        actorsDataProvider.items.clear()
+                        actorsDataProvider.items.addAll(api.getActors())
                         updateUI()
                     }
                 }
             }
-            val actorsGrid = Grid<String>().apply {
+            val actorsGrid = Grid<Actor>().apply {
                 width = 400.px
                 height = 600.px
                 style.set(CSS.BORDER, ELEMENT().add(1.px).add(CSS.SOLID).add("d3d3d3".hex).css())
@@ -212,37 +208,21 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
 
 
                 dataProvider = actorsDataProvider
-                addColumn {it}.setHeader("Актор")
+                addColumn {it.actorName}.setHeader("Актор")
 
                 addColumn(ComponentRenderer {actorX ->
                     val addButton = Button().apply {
-                        var c = cacheController.getCache()!!
-                        var project = c.projects.find { it.name == currentProject!!.name }!!
-                        if (project.actors.contains(actorX)) {
+                        val assign = api.getProjectAssignmentsByActor(currentProject!!.id, actorX.id)
+                        if (assign != null) {
                             icon = Icon(VaadinIcon.MINUS)
                             onLeftClick {
-                                c = cacheController.getCache()!!
-                                project = c.projects.find { it.name == currentProject!!.name }!!
-                                if(project.actors.contains(actorX)) {
-                                    val actorToRemove = project.selected.find { it.actorName == actorX }!!
-                                    project.selected.remove(actorToRemove)
-                                    project.actors.remove(actorX)
-                                }
-                                cacheController.saveCache(c)
-                                currentProject = project
+                                api.removeAssignment(assign.id)
                                 updateUI()
                             }
                         } else {
                             icon = Icon(VaadinIcon.PLUS)
                             onLeftClick {
-                                c = cacheController.getCache()!!
-                                project = c.projects.find { it.name == currentProject!!.name }!!
-                                if(!project.actors.contains(actorX)) {
-                                    project.selected.add(Actor(actorX))
-                                    project.actors.add(actorX)
-                                }
-                                cacheController.saveCache(c)
-                                currentProject = project
+                                api.addAssignment(actorX.id, currentProject!!.id)
                                 updateUI()
                             }
                         }
@@ -253,14 +233,11 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
                         icon = Icon(VaadinIcon.TRASH)
                         addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_TERTIARY_INLINE)
                         onLeftClick {
-                            val c = cacheController.getCache()!!
-                            c.actors.remove(actorX)
+                            api.removeActor(actorX.id)
                             actorsDataProvider.items.remove(actorX)
-                            cacheController.saveCache(c)
                             updateUI()
                         }
                     }
-
                     HorizontalLayout(deleteButton, addButton)
                 })
             }
@@ -281,15 +258,16 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
                 justifyContentMode = JustifyContentMode.CENTER
             }
 
-            val addedCharactersDataProvider = ListDataProvider(cacheController.getCache()!!.projects.find { it.name == currentProject!!.name }!!.selected)
+            //cacheController.getCache()!!.projects.find { it.name == currentProject!!.name }!!.selected
+            val assignedActorsDataProvider = ListDataProvider(api.getProjectAssignments(currentProject!!.id))
 
             val charactersSelectorActorSearchBox = TextField().apply {
                 placeholder = "Пошук..."
 
                 addValueChangeListener { event ->
                     val filterText = event.value ?: ""
-                    addedCharactersDataProvider.setFilter { actor ->
-                        actor.actorName.contains(filterText, true)
+                    assignedActorsDataProvider.setFilter { actor ->
+                        api.getActor(actor.actor).actorName.contains(filterText, true)
                     }
                 }
             }
@@ -304,51 +282,37 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
                 }
             }
 
-            val charactersGrid = Grid<Actor>().apply {
+            val charactersGrid = Grid<Assignment>().apply {
                 width = 700.px
                 height = 600.px
                 style.set(CSS.BORDER, ELEMENT().add(1.px).add(CSS.SOLID).add("d3d3d3".hex).css())
                 style.set(CSS.BORDER_RADIUS, 10.px)
-                dataProvider = addedCharactersDataProvider
-                addColumn {it.actorName}.setHeader("Актор")
-                addColumn(ComponentRenderer {actorX ->
+                dataProvider = assignedActorsDataProvider
+                addColumn {api.getActor(it.actor).actorName}.setHeader("Актор")
+                addColumn(ComponentRenderer {assignment ->
 
-                    val characterChooser = MultiSelectComboBox<String>().apply {
-                        /*if(hideSelected){
-                            setItems(
-                                cacheController.getCache()!!.projects
-                                    .find { it.name == currentProject?.name }
-                                    ?.characters
-                                    ?.filter { character ->
-                                        val selectedActor = c.projects
-                                            .find { it.name == currentProject?.name }
-                                            ?.selected
-                                            ?.find { it.actorName == actorX.actorName }
-
-                                        val otherActorSelected = c.projects
-                                            .find { it.name == currentProject?.name }
-                                            ?.selected
-                                            ?.find { it.actorName != actorX.actorName }
-
-                                        selectedActor?.characterNames?.contains(character) == true ||
-                                                otherActorSelected?.characterNames?.contains(character) != true
-                                    }
-                            )
-
+                    val characterChooser = MultiSelectComboBox<Character>().apply {
+                        if(hideSelected){
+                    setItems(api.getProjectCharacters(currentProject!!.id).filter { it.actor == null || it.actor == assignment.actor })
                         } else{
-                            setItems(cacheController.getCache()!!.projects.find { it.name == currentProject!!.name }!!.characters)
-                        }*/
-                        setItems(cacheController.getCache()!!.projects.find { it.name == currentProject!!.name }!!.characters)
-                        setItemLabelGenerator { it }
-                        value = actorX.characterNames.toSet()
+                            setItems(api.getProjectCharacters(currentProject!!.id))
+                        }
+                        setItemLabelGenerator { it.name }
+                        value = api.getCharactersByActor(assignment.actor, currentProject!!.id).toSet()
 
                         addValueChangeListener { event ->
-                            val c = cacheController.getCache()!!
-                            val cProject = c.projects.find { it.name == currentProject!!.name }!!.selected
-                            val cCharacters = cProject.find { it.actorName == actorX.actorName }!!
-                            cCharacters.characterNames.clear()
-                            cCharacters.characterNames.addAll(event.value)
-                            cacheController.saveCache(c)
+                            val new = event.value
+                            val old = event.oldValue
+
+                            val addedValues = new.minus(old)
+                            val removedValues = old.minus(new)
+
+                            addedValues.forEach {
+                                api.assignActorToCharacter(assignment.actor, it.id)
+                            }
+                            removedValues.forEach {
+                                api.assignActorToCharacter(null, it.id)
+                            }
                         }
                     }
 
@@ -371,9 +335,16 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
 
             val renameButton = Button("Перейменувати акторів").apply {
                 onLeftClick {
-                    val projectX = cacheController.getCache()!!.projects.find { it.name == currentProject!!.name }!!.selected
+                    val actors: MutableList<com.magnariuk.lemonkasubstoolw.data.Classes.Actor> = mutableListOf()
+                    api.getProjectAssignments(currentProject!!.id).forEach { assignment ->
+                        val actor = api.getActor(assignment.actor)
+                        val characters = api.getCharactersByActor(actor.id, currentProject!!.id)
+                        actors.add(com.magnariuk.lemonkasubstoolw.data.Classes.Actor(actor.actorName, characters.map { it.name }.toMutableList()))
+                    }
+
                     val assParser = ParserIS()
-                    val file = assParser.renameActors(ass!!, projectX)
+                    val separs = api.getSeparators().map { it.separator }
+                    val file = assParser.renameActors(ass!!, actors, separs)
                     val dialog = Dialog().apply {
                         headerTitle = "Завантажити готовий файл"
 
@@ -394,14 +365,19 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
                 addThemeVariants(ButtonVariant.LUMO_PRIMARY)
                 onLeftClick {
                     val createdFiles: MutableMap<String, StreamResource> = mutableMapOf()
-                    val projectX = cacheController.getCache()!!.projects.find { it.name == currentProject!!.name }!!.selected
+                    val actors: MutableList<com.magnariuk.lemonkasubstoolw.data.Classes.Actor> = mutableListOf()
+                    api.getProjectAssignments(currentProject!!.id).forEach { assignment ->
+                        val actor = api.getActor(assignment.actor)
+                        val characters = api.getCharactersByActor(actor.id, currentProject!!.id)
+                        actors.add(com.magnariuk.lemonkasubstoolw.data.Classes.Actor(actor.actorName, characters.map { it.name }.toMutableList()))
+                    }
                     val assParser = ParserIS()
 
                     if(selectFormat.value != null){
                         when (selectFormat.value.format){
                             "srt" -> {
-                                projectX.forEach { actor ->
-                                    val trier = assParser.createSubRip("${actor.actorName}.srt", ass!!, actor.characterNames)
+                                actors.forEach { actor ->
+                                    val trier = assParser.createSubRip("${actor.actorName}.srt", ass!!, actor.characterNames, api.getSeparators().map { it.separator })
                                     if(trier != null){
                                         createdFiles["${actor.actorName}.srt"] = trier
                                     }
@@ -427,8 +403,8 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
                                 dialog.open()
                             }
                             "ass" -> {
-                                projectX.forEach { actor ->
-                                    val trier = assParser.createAss("${actor.actorName}.ass", ass!!, actor.characterNames)
+                                actors.forEach { actor ->
+                                    val trier = assParser.createAss("${actor.actorName}.ass", ass!!, actor.characterNames, api.getSeparators().map { it.separator })
                                     if(trier != null){
                                         createdFiles["${actor.actorName}.ass"] = trier
                                     }
@@ -469,14 +445,19 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
                 addThemeVariants(ButtonVariant.LUMO_TERTIARY)
                 onLeftClick {
                     val createdFiles: MutableMap<String, StreamResource> = mutableMapOf()
-                    val projectX = cacheController.getCache()!!.projects.find { it.name == currentProject!!.name }!!.characters
+                    val actors: MutableList<com.magnariuk.lemonkasubstoolw.data.Classes.Actor> = mutableListOf()
+                    api.getProjectAssignments(currentProject!!.id).forEach { assignment ->
+                        val actor = api.getActor(assignment.actor)
+                        val characters = api.getCharactersByActor(actor.id, currentProject!!.id)
+                        actors.add(com.magnariuk.lemonkasubstoolw.data.Classes.Actor(actor.actorName, characters.map { it.name }.toMutableList()))
+                    }
                     val assParser = ParserIS()
 
                     if(selectFormat.value != null){
                         when (selectFormat.value.format){
                             "srt" -> {
-                                projectX.forEach { actor ->
-                                    val trier = assParser.createSubRip("${actor}.srt", ass!!, listOf(actor))
+                                actors.forEach { actor ->
+                                    val trier = assParser.createSubRip("${actor}.srt", ass!!, actor.characterNames, api.getSeparators().map { it.separator })
                                     if(trier != null){
                                         createdFiles["${actor}.srt"] = trier
                                     }
@@ -502,8 +483,8 @@ class SubsToolView: KComposite(), BeforeEnterObserver {
                                 dialog.open()
                             }
                             "ass" -> {
-                                projectX.forEach { actor ->
-                                    val trier = assParser.createAss("${actor}.ass", ass!!, listOf(actor))
+                                actors.forEach { actor ->
+                                    val trier = assParser.createAss("${actor}.ass", ass!!, actor.characterNames, api.getSeparators().map { it.separator })
                                     if(trier != null){
                                         createdFiles["${actor}.ass"] = trier
                                     }

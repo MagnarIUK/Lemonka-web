@@ -37,7 +37,7 @@ class SRTCounter( val srt: SRT, val characters: MutableList<String> = mutableLis
         return result
     }
 
-    fun count(): MutableMap<String, String> {
+    fun count(separators: List<String>): MutableMap<String, String> {
         val result: MutableMap<String, String>  = mutableMapOf()
         var count = 0
         val numbers: MutableList<Int>  = mutableListOf()
@@ -45,7 +45,7 @@ class SRTCounter( val srt: SRT, val characters: MutableList<String> = mutableLis
         srt.dialogs.forEach { dialog ->
             val actors = dialog.actors
             val texts = dialog.dialog?.replace(",", "")?.split(" ", "\\N")
-            val actorsHere = actors.map { it.split("and", ",").map { it.trim() } }
+            val actorsHere = actors.map { it.split(*separators.toTypedArray()).map { it.trim() } }
 
 
 
