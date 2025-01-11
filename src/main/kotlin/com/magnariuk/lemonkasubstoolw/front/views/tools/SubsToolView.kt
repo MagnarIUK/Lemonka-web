@@ -313,6 +313,7 @@ class SubsToolView(
                             removedValues.forEach {
                                 api.assignActorToCharacter(null, it.id)
                             }
+
                         }
                     }
 

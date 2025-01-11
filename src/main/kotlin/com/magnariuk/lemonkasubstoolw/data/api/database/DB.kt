@@ -94,6 +94,10 @@ open class DB(private val dbController: DatabaseController) {
     fun removeActor(actor: Int) {
         dbController.dbQuery {
             Actors.deleteWhere { Actors.id eq actor }
+            Assignments.deleteWhere { Assignments.actor eq actor }
+            Characters.update({ Characters.actor eq actor }) {
+                it[Characters.actor] = null
+            }
         }
     }
 
@@ -125,6 +129,10 @@ open class DB(private val dbController: DatabaseController) {
 
     fun removeAssignment(id: Int) {
         dbController.dbQuery {
+            val asi = Assignments.selectAll().where { Assignments.id eq id }.first().let { Format().toAssignment(it) }
+            Characters.update({ Characters.actor eq asi.actor and (Characters.project eq asi.project) }) {
+                it[actor] = null
+            }
             Assignments.deleteWhere { Assignments.id eq id }
         }
     }
