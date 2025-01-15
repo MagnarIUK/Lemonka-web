@@ -115,20 +115,25 @@ class SubsToolView(
                                                 addThemeVariants(ButtonVariant.LUMO_PRIMARY)
                                                 onLeftClick {
                                                     if(api.getProjectByName(projectNameField.value.trim()) == null) {
-                                                        val newProject = api.getProject(api.createProject(projectNameField.value.trim()))
-                                                        currentProject = newProject
-                                                        val assActors = ass!!.getAllActors().distinct().toMutableList()
-                                                        assActors.forEach { character ->
-                                                            val separs = api.getSeparators().map { it.separator }
-                                                            val splitCharacters = character.split(*separs.toTypedArray()).map { it.trim() }
-                                                            splitCharacters.forEach {
-                                                                if(api.getCharacterByName(it, currentProject!!.id) == null){
-                                                                    api.addCharacter(it, newProject.id)
+                                                        if(projectNameField.value.trim() != ""){
+                                                            val newProject = api.getProject(api.createProject(projectNameField.value.trim()))
+                                                            currentProject = newProject
+                                                            val assActors = ass!!.getAllActors().distinct().toMutableList()
+                                                            assActors.forEach { character ->
+                                                                val separs = api.getSeparators().map { it.separator }
+                                                                val splitCharacters = character.split(*separs.toTypedArray()).map { it.trim() }
+                                                                splitCharacters.forEach {
+                                                                    if(api.getCharacterByName(it, currentProject!!.id) == null){
+                                                                        api.addCharacter(it, newProject.id)
+                                                                    }
                                                                 }
                                                             }
+                                                            close()
+                                                            updateUI()
+                                                        } else{
+                                                            showError("Недопустима назва проєкту")
                                                         }
-                                                        close()
-                                                        updateUI()
+
                                                     } else {
                                                         showError("Проєкт з таким ім'ям вже існує")
                                                     }
