@@ -1,6 +1,7 @@
 package com.magnariuk.lemonkasubstoolw.front.views.tools
 
 import com.github.mvysny.karibudsl.v10.onLeftClick
+import com.magnariuk.lemonkasubstoolw.data.api.database.AuthService
 import com.magnariuk.lemonkasubstoolw.front.util.MainLayout
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
@@ -10,6 +11,7 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode
 import com.vaadin.flow.component.orderedlayout.VerticalLayout
 import com.vaadin.flow.router.PageTitle
 import com.vaadin.flow.router.Route
+import org.springframework.beans.factory.annotation.Autowired
 
 @PageTitle("Lemonka Tools")
 @Route("/tools", layout = MainLayout::class)
@@ -32,5 +34,6 @@ class MainToolsView : VerticalLayout() {
 
         alignItems = Alignment.CENTER
         justifyContentMode = JustifyContentMode.CENTER
+
     }
 }

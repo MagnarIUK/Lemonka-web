@@ -14,6 +14,7 @@ import com.magnariuk.lemonkasubstoolw.data.Classes.SRT
 import com.magnariuk.lemonkasubstoolw.data.Classes.Actor
 import com.magnariuk.lemonkasubstoolw.data.Classes.Ass
 import com.magnariuk.lemonkasubstoolw.data.api.database.ApiService
+import com.magnariuk.lemonkasubstoolw.data.api.database.AuthService
 import com.magnariuk.lemonkasubstoolw.data.api.database.Character
 import com.magnariuk.lemonkasubstoolw.data.api.database.Project
 import com.magnariuk.lemonkasubstoolw.data.api.subs.SRTParser
@@ -33,6 +34,7 @@ import com.vaadin.flow.component.icon.Icon
 import com.vaadin.flow.component.icon.VaadinIcon
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout
 import com.vaadin.flow.component.textfield.TextArea
+import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.component.upload.Upload
 import com.vaadin.flow.component.upload.receivers.MultiFileMemoryBuffer
 import com.vaadin.flow.router.PageTitle
@@ -46,13 +48,15 @@ import kotlin.reflect.jvm.internal.impl.util.Check
 @Route("/tools/calculator", layout = MainLayout::class)
 @PageTitle("Рахівниця")
 class ActorMeter(
-    @Autowired private val api: ApiService
+    @Autowired private val api: ApiService,
+    @Autowired private val authService: AuthService
 ): KComposite(), BeforeEnterObserver {
     private lateinit var dynamicLayout: VerticalLayout
     private var srt: MutableList<SRT> = mutableListOf()
     private var ass: MutableList<Ass> = mutableListOf()
     private var selectedProject: Project? = null
     private var selectedCharacters: MutableList<Character> = mutableListOf()
+    private var user = authService.getLoggedInUser()
 
     private val root = ui {
         verticalLayout {
@@ -100,7 +104,7 @@ class ActorMeter(
 
             val projectSelector = ComboBox<Project>().apply {
                 label = "Оберіть проєкт"
-                setItems(api.getProjects())
+                setItems(api.getProjects(user))
                 setItemLabelGenerator { it.name }
 
                 addValueChangeListener { value ->
@@ -247,6 +251,85 @@ class ActorMeter(
                 justifyContentMode = JustifyContentMode.CENTER
             }
             dynamicLayout.add(chooseSubHolder)
+        }
+        if(user == null){
+            showError("Ви не автентифіковані")
+            val dialog = Dialog().apply{
+
+                val usernameField = TextField("Ім'я користувача").apply {
+                    width = 300.px
+                    isRequired = true
+                    isRequiredIndicatorVisible = true
+                }
+                val passwordField = TextField("Пароль").apply {
+                    width = 300.px
+                    isRequired = true
+                    isRequiredIndicatorVisible = true
+                }
+
+                val logIn = Button("Увійти").apply {
+                    setWidth(200.px)
+                    addThemeVariants(ButtonVariant.LUMO_PRIMARY)
+                    addClickListener {
+                        val _username = usernameField.value.trim()
+                        val _password = passwordField.value.trim()
+                        val t = authService.login(_username, _password)
+                        when (t) {
+                            "s" -> {
+                                showSuccess("Успішний вхід")
+                                user = authService.getLoggedInUser()
+                                close()
+                                updateUI()
+                            }
+                            "e:pnv" -> {
+                                passwordField.isInvalid = true
+                                passwordField.errorMessage = "невірний пароль"
+                            }
+                            "e:unf" -> {
+                                usernameField.isInvalid = true
+                                usernameField.errorMessage = "користувача не знайдено"
+                            }
+                        }
+                    }
+                }
+                val signUp = Button("Зареєструватися").apply {
+                    setWidth(200.px)
+                    addClickListener {
+                        val _username = usernameField.value.trim()
+                        val _password = passwordField.value.trim()
+                        if(_username.length < 4) {
+                            usernameField.isInvalid = true
+                            usernameField.errorMessage = "ім'я користувача занадто коротке"
+                        } else if(_password.length < 8) {
+                            passwordField.isInvalid = true
+                            passwordField.errorMessage = "пароль занадто короткий"
+                        } else {
+
+                            val r = authService.register(_username, _password)
+                            when (r) {
+                                "e:uax" -> {
+                                    usernameField.isInvalid = true
+                                    usernameField.errorMessage = "користувач з таким ім'ям вже існує"
+                                }
+
+                                "s" -> {
+                                    showSuccess("Успішна реєстрація")
+                                    user = authService.getLoggedInUser()
+                                    close()
+                                    updateUI()
+                                }
+                            }
+                        }
+                    }
+                }
+                isCloseOnOutsideClick = false
+                isCloseOnEsc = false
+                add(VerticalLayout(usernameField, passwordField, logIn, signUp).apply {
+                    alignItems = Alignment.CENTER
+                    justifyContentMode = JustifyContentMode.CENTER
+                })
+                open()
+            }
         }
     }
 

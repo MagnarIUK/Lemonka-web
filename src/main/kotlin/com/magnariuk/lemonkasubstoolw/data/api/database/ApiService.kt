@@ -11,13 +11,26 @@ class ApiService(
 
     fun getSettings() = db.getSettings()
     fun getSeparators() = db.getSeparators()
-    fun createProject(name: String) = db.createProject(name)
-    fun getProjects() = db.getProjects()
+    fun createProject(name: String, user: User) = db.createProject(name, user)
+    fun getProjects(user: User?): List<Project> {
+        if(user == null){
+            return listOf()
+        } else{
+            return db.getProjects(user)
+        }
+    }
+    fun getProjectsByUser(user: User) = db.getProjectsByUser(user)
     fun getProject(id: Int) = db.getProject(id)
     fun getProjectByName(name: String) = db.getProjectByName(name)
-    fun addActor(name: String) = db.addActor(name)
+    fun addActor(name: String, user: User) = db.addActor(name, user)
     fun removeActor(id: Int) = db.removeActor(id)
-    fun getActors() = db.getActors()
+    fun getActors(user: User?): List<Actor> {
+        if(user == null){
+            return listOf()
+        } else{
+            return db.getActors(user)
+        }
+    }
     fun getActor(id: Int) = db.getActor(id)
     fun getActorByName(name: String) = db.getActorByName(name)
     fun addAssignment(actor: Int, project: Int) = db.addAssignment(actor, project)

@@ -4,25 +4,46 @@ import com.magnariuk.lemonkasubstoolw.data.api.database.Characters.autoIncrement
 import org.jetbrains.exposed.sql.*
 
 
+object Users: Table() {
+    val id: Column<Int> = integer("id").autoIncrement()
+    val username: Column<String> = varchar("name", 1000)
+    val password: Column<String> = varchar("password", 1000)
+    val userData: Column<String?> = text("user_data").nullable()
+    override val primaryKey = PrimaryKey(id, name = "users_pk")
+}
+data class User(
+    var id: Int,
+    var username: String,
+    var password: String,
+    val userData: UserData?
+)
+data class UserData(
+    var valid: Boolean?
+)
+
 object Projects: Table() {
     val id: Column<Int> = integer("id").autoIncrement()
     val name: Column<String> = varchar("name", 1000)
+    val user: Column<Int> = integer("user").references(Users.id)
     override val primaryKey = PrimaryKey(id, name = "projects_pk")
 }
 
 data class Project(
     var id: Int,
-    var name: String
+    var name: String,
+    val user: Int?
 )
 
 object Actors: Table() {
     val id: Column<Int> = integer("id").autoIncrement()
     val actorName: Column<String> = varchar("actor_name", 1000)
+    val user: Column<Int> = integer("user").references(Users.id)
     override val primaryKey = PrimaryKey(id, name = "actors_pk")
 }
 
 data class Actor(
     var id: Int,
+    val user: Int,
     var actorName: String
 )
 

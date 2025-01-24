@@ -38,12 +38,15 @@ import org.vaadin.olli.FileDownloadWrapper
 @PageTitle("Субтитри")
 @Route("/tools/sub", layout = MainLayout::class)
 class SubsToolView(
-    @Autowired private val api: ApiService
+    @Autowired private val api: ApiService,
+    @Autowired private val authService: AuthService
 ): KComposite(), BeforeEnterObserver {
     private lateinit var dynamicLayout: VerticalLayout
     private var ass: Ass? = null
     private var hideSelected = api.getSettings().hideSelected
     private var currentProject: Project? = null
+    private var user = authService.getLoggedInUser()
+
 
     override fun beforeEnter(p0: BeforeEnterEvent?) {
         updateUI()
@@ -84,7 +87,7 @@ class SubsToolView(
             }
             val projectSelector = ComboBox<Project>().apply {
                 label = "Оберіть проєкт"
-                setItems(api.getProjects() + Project(1000000, "Додати новий"))
+                setItems(api.getProjects(user) + Project(1000000, "Додати новий", user?.id))
                 setItemLabelGenerator { it.name }
                 isRequired = true
                 isRequiredIndicatorVisible = true
@@ -116,7 +119,7 @@ class SubsToolView(
                                                 onLeftClick {
                                                     if(api.getProjectByName(projectNameField.value.trim()) == null) {
                                                         if(projectNameField.value.trim() != ""){
-                                                            val newProject = api.getProject(api.createProject(projectNameField.value.trim()))
+                                                            val newProject = api.getProject(api.createProject(projectNameField.value.trim(), user!!))
                                                             currentProject = newProject
                                                             val assActors = ass!!.getAllActors().distinct().toMutableList()
                                                             assActors.forEach { character ->
@@ -182,7 +185,7 @@ class SubsToolView(
             }
             dynamicLayout.add(chooseSubHolder)
         } else {
-            val actorsDataProvider = ListDataProvider(api.getActors())
+            val actorsDataProvider = ListDataProvider(api.getActors(user))
             val actorsSearchBox = TextField().apply {
                 placeholder = "Актор..."
 
@@ -198,9 +201,9 @@ class SubsToolView(
                 addThemeVariants(ButtonVariant.LUMO_PRIMARY)
                 onLeftClick {
                     if(api.getActorByName(actorsSearchBox.value.trim()) == null){
-                        api.addActor(actorsSearchBox.value.trim())
+                        api.addActor(actorsSearchBox.value.trim(), user!!)
                         actorsDataProvider.items.clear()
-                        actorsDataProvider.items.addAll(api.getActors())
+                        actorsDataProvider.items.addAll(api.getActors(user))
                         updateUI()
                     }
                 }
@@ -564,6 +567,85 @@ class SubsToolView(
             }
             dynamicLayout.add(menuHolder)
         }
+        if(user == null){
+            showError("Ви не автентифіковані")
+            val dialog = Dialog().apply{
+
+                val usernameField = TextField("Ім'я користувача").apply {
+                    width = 300.px
+                    isRequired = true
+                    isRequiredIndicatorVisible = true
+                }
+                val passwordField = TextField("Пароль").apply {
+                    width = 300.px
+                    isRequired = true
+                    isRequiredIndicatorVisible = true
+                }
+
+                val logIn = Button("Увійти").apply {
+                    setWidth(200.px)
+                    addThemeVariants(ButtonVariant.LUMO_PRIMARY)
+                    addClickListener {
+                        val _username = usernameField.value.trim()
+                        val _password = passwordField.value.trim()
+                        val t = authService.login(_username, _password)
+                        when (t) {
+                            "s" -> {
+                                showSuccess("Успішний вхід")
+                                user = authService.getLoggedInUser()
+                                close()
+                                updateUI()
+                            }
+                            "e:pnv" -> {
+                                passwordField.isInvalid = true
+                                passwordField.errorMessage = "невірний пароль"
+                            }
+                            "e:unf" -> {
+                                usernameField.isInvalid = true
+                                usernameField.errorMessage = "користувача не знайдено"
+                            }
+                        }
+                    }
+                }
+                val signUp = Button("Зареєструватися").apply {
+                    setWidth(200.px)
+                    addClickListener {
+                        val _username = usernameField.value.trim()
+                        val _password = passwordField.value.trim()
+                        if(_username.length < 4) {
+                            usernameField.isInvalid = true
+                            usernameField.errorMessage = "ім'я користувача занадто коротке"
+                        } else if(_password.length < 8) {
+                            passwordField.isInvalid = true
+                            passwordField.errorMessage = "пароль занадто короткий"
+                        } else {
+                            val r = authService.register(_username, _password)
+                            when (r) {
+                                "e:uax" -> {
+                                    usernameField.isInvalid = true
+                                    usernameField.errorMessage = "користувач з таким ім'ям вже існує"
+                                }
+
+                                "s" -> {
+                                    showSuccess("Успішна реєстрація")
+                                    user = authService.getLoggedInUser()
+                                    close()
+                                    updateUI()
+                                }
+                            }
+                        }
+                    }
+                }
+                isCloseOnOutsideClick = false
+                isCloseOnEsc = false
+                add(VerticalLayout(usernameField, passwordField, logIn, signUp).apply {
+                    alignItems = Alignment.CENTER
+                    justifyContentMode = JustifyContentMode.CENTER
+                })
+                open()
+            }
+        }
+
 
 
     }

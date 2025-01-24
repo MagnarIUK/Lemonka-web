@@ -1,22 +1,27 @@
 package com.magnariuk.lemonkasubstoolw.front.util
 
-import com.github.mvysny.karibudsl.v10.onLeftClick
-import com.github.mvysny.karibudsl.v10.text
-import com.magnariuk.lemonkasubstoolw.data.util.CSS
+import com.magnariuk.lemonkasubstoolw.data.api.database.AuthService
 import com.magnariuk.lemonkasubstoolw.data.util.*
 import com.magnariuk.lemonkasubstoolw.front.views.tools.MainToolsView
+import com.vaadin.flow.component.ClickEvent
+import com.vaadin.flow.component.ComponentEventListener
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.applayout.AppLayout
-import com.vaadin.flow.component.button.Button
-import com.vaadin.flow.component.button.ButtonVariant
+import com.vaadin.flow.component.contextmenu.MenuItem
+import com.vaadin.flow.component.contextmenu.SubMenu
+import com.vaadin.flow.component.dialog.Dialog
 import com.vaadin.flow.component.html.Anchor
-import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.html.NativeLabel
 import com.vaadin.flow.component.html.Paragraph
+import com.vaadin.flow.component.menubar.MenuBar
 import com.vaadin.flow.component.orderedlayout.FlexComponent
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout
+import org.springframework.beans.factory.annotation.Autowired
 
-class MainLayout: AppLayout() {
+
+class MainLayout(
+    @Autowired private val authService: AuthService
+): AppLayout() {
     init {
 
         val lamonka = Anchor("https://t.me/KokojamboLVP", "Lem0nka Tools").apply {
@@ -37,19 +42,45 @@ class MainLayout: AppLayout() {
         val title = HorizontalLayout(lamonka, made_By)
 
 
+        val menu = MenuBar().apply {
+            val listener: ComponentEventListener<ClickEvent<MenuItem>> =
+                ComponentEventListener<ClickEvent<MenuItem>> { e: ClickEvent<MenuItem> ->
+                    val item = e.source.text
+                    when (item) {
+                        "Головна" -> {
+                            UI.getCurrent().navigate(MainToolsView::class.java)
+                        }
+                        "Профіль" -> {
+                            val dialog = Dialog().apply{
 
-        val menu = HorizontalLayout(
+                            }
+                            dialog.open()
+                        }
+                        "Вихід" -> {
+                            authService.logout()
+                            UI.getCurrent().navigate(MainToolsView::class.java)
+                        }
+                    }
+                }
+
+            addItem("Головна", listener)
+            val profile = addItem("Профіль")
+            val subMenuProfile = profile.subMenu.apply {
+                addItem("Профіль", listener)
+                addItem("Вихід", listener)
+            }
+        }
+        /* HorizontalLayout(
             Button("Головна").apply {
                 addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE)
                 onLeftClick {
                     UI.getCurrent().navigate(MainToolsView::class.java)
                 }
-            }
-
+            },
         ).apply {
             isSpacing = true
             alignItems = FlexComponent.Alignment.CENTER
-        }
+        }*/
 
         val titleWrapper = HorizontalLayout().apply {
             add(title)

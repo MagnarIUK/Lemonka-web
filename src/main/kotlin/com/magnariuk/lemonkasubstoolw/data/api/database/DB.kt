@@ -1,10 +1,14 @@
 package com.magnariuk.lemonkasubstoolw.data.api.database
 
 
+import com.google.gson.Gson
+import com.magnariuk.lemonkasubstoolw.data.Classes.Cache
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
+import java.io.FileReader
+import java.io.IOException
 
 open class DatabaseController{
 
@@ -47,6 +51,27 @@ open class DatabaseController{
 
 open class DB(private val dbController: DatabaseController) {
 
+    fun getUser(id: Int): User {
+        return dbController.dbQuery {
+            Users.selectAll().where { Users.id eq id }.map { Format().toUser(it) }.first()
+        }
+    }
+    fun getUser(username: String): User? {
+        return dbController.dbQuery {
+            Users.selectAll().where { Users.username eq username }.map { Format().toUser(it) }.firstOrNull()
+        }
+    }
+
+    fun createUser(username: String, password: String): Int {
+        return dbController.dbQuery {
+            Users.insert {
+                it[Users.username] = username
+                it[Users.password] = password
+            } get Users.id
+        }
+    }
+
+
     fun getSettings(): Setting {
         return dbController.dbQuery {
             Settings.selectAll().where(Settings.id eq 1).first().let { Format().toSetting(it) }
@@ -59,10 +84,11 @@ open class DB(private val dbController: DatabaseController) {
         }
     }
 
-    fun createProject(name: String): Int {
+    fun createProject(name: String, user: User): Int {
         return dbController.dbQuery {
             Projects.insert {
                 it[Projects.name] = name
+                it[Projects.user] = user.id
             } get Projects.id
         }
     }
@@ -77,16 +103,24 @@ open class DB(private val dbController: DatabaseController) {
         }
     }
 
-    fun getProjects(): List<Project> {
+    fun getProjectsByUser(user: User): List<Project> {
         return dbController.dbQuery {
-            Projects.selectAll().map { Format().toProject(it) }
+            Projects.selectAll().where { Projects.user eq user.id }.map { Format().toProject(it) }
         }
     }
 
-    fun addActor(actorName: String) {
+
+    fun getProjects(user: User): List<Project> {
+        return dbController.dbQuery {
+            Projects.selectAll().where { Projects.user eq user.id }.map { Format().toProject(it) }
+        }
+    }
+
+    fun addActor(actorName: String, user: User) {
         dbController.dbQuery {
             Actors.insert {
                 it[Actors.actorName] = actorName
+                it[Actors.user] = user.id
             }
         }
     }
@@ -107,9 +141,9 @@ open class DB(private val dbController: DatabaseController) {
         }
     }
 
-    fun getActors(): List<Actor> {
+    fun getActors(user: User): List<Actor> {
         return dbController.dbQuery {
-            Actors.selectAll().map { Format().toActor(it) }
+            Actors.selectAll().where { Actors.user eq user.id }.map { Format().toActor(it) }
         }
     }
     fun getActorByName(name: String): Actor? {
@@ -183,19 +217,45 @@ open class DB(private val dbController: DatabaseController) {
         }
     }
 
+
+
 }
 
 open class Format {
     fun toProject(row: ResultRow): Project {
         return Project(
             id = row[Projects.id],
-            name = row[Projects.name]
+            name = row[Projects.name],
+            user = row[Projects.user]
         )
     }
+    fun toUser(row: ResultRow): User {
+        val gson = Gson()
+        try {
+            val ud = gson.fromJson(row[Users.userData], UserData::class.java)
+            return User(
+                id = row[Users.id],
+                username = row[Users.username],
+                password = row[Users.password],
+                userData = ud
+            )
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+
+        return User(
+            id = row[Users.id],
+            username = row[Users.username],
+            password = row[Users.password],
+            userData = null
+        )
+    }
+
     fun toActor(row: ResultRow): Actor {
         return Actor(
             id = row[Actors.id],
-            actorName = row[Actors.actorName]
+            actorName = row[Actors.actorName],
+            user = row[Actors.user]
         )
     }
 
