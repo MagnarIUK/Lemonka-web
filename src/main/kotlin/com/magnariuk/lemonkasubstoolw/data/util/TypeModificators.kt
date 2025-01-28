@@ -36,3 +36,7 @@ val Double.s: String get() = "${this}s"
  * Повертає значення в hex кольорі, наприклад: "d3d3d3".p -> "#d3d3d3".
  */
 val String.hex: String get() = "#${this}"
+
+val Int.tm: Int get() = this*60
+val Int.th: Int get() = this*60*60
+val Int.td: Int get() = this*60*60*24

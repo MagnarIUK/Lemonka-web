@@ -43,7 +43,6 @@ class SubsToolView(
 ): KComposite(), BeforeEnterObserver {
     private lateinit var dynamicLayout: VerticalLayout
     private var ass: Ass? = null
-    private var hideSelected = api.getSettings().hideSelected
     private var currentProject: Project? = null
     private var user = authService.getLoggedInUser()
 
@@ -185,6 +184,7 @@ class SubsToolView(
             }
             dynamicLayout.add(chooseSubHolder)
         } else {
+            var hideSelected: Boolean = user?.let { api.getSettings(it).hideSelected } ?: true
             val actorsDataProvider = ListDataProvider(api.getActors(user))
             val actorsSearchBox = TextField().apply {
                 placeholder = "Актор..."
@@ -568,81 +568,87 @@ class SubsToolView(
             dynamicLayout.add(menuHolder)
         }
         if(user == null){
-            showError("Ви не автентифіковані")
-            val dialog = Dialog().apply{
+            val aath = authService.loginWithToken()
+            if(aath != "s"){
+                showError("Ви не автентифіковані")
+                val dialog = Dialog().apply{
 
-                val usernameField = TextField("Ім'я користувача").apply {
-                    width = 300.px
-                    isRequired = true
-                    isRequiredIndicatorVisible = true
-                }
-                val passwordField = TextField("Пароль").apply {
-                    width = 300.px
-                    isRequired = true
-                    isRequiredIndicatorVisible = true
-                }
-
-                val logIn = Button("Увійти").apply {
-                    setWidth(200.px)
-                    addThemeVariants(ButtonVariant.LUMO_PRIMARY)
-                    addClickListener {
-                        val _username = usernameField.value.trim()
-                        val _password = passwordField.value.trim()
-                        val t = authService.login(_username, _password)
-                        when (t) {
-                            "s" -> {
-                                showSuccess("Успішний вхід")
-                                user = authService.getLoggedInUser()
-                                close()
-                                updateUI()
-                            }
-                            "e:pnv" -> {
-                                passwordField.isInvalid = true
-                                passwordField.errorMessage = "невірний пароль"
-                            }
-                            "e:unf" -> {
-                                usernameField.isInvalid = true
-                                usernameField.errorMessage = "користувача не знайдено"
-                            }
-                        }
+                    val usernameField = TextField("Ім'я користувача").apply {
+                        width = 300.px
+                        isRequired = true
+                        isRequiredIndicatorVisible = true
                     }
-                }
-                val signUp = Button("Зареєструватися").apply {
-                    setWidth(200.px)
-                    addClickListener {
-                        val _username = usernameField.value.trim()
-                        val _password = passwordField.value.trim()
-                        if(_username.length < 4) {
-                            usernameField.isInvalid = true
-                            usernameField.errorMessage = "ім'я користувача занадто коротке"
-                        } else if(_password.length < 8) {
-                            passwordField.isInvalid = true
-                            passwordField.errorMessage = "пароль занадто короткий"
-                        } else {
-                            val r = authService.register(_username, _password)
-                            when (r) {
-                                "e:uax" -> {
-                                    usernameField.isInvalid = true
-                                    usernameField.errorMessage = "користувач з таким ім'ям вже існує"
-                                }
+                    val passwordField = TextField("Пароль").apply {
+                        width = 300.px
+                        isRequired = true
+                        isRequiredIndicatorVisible = true
+                    }
 
+                    val logIn = Button("Увійти").apply {
+                        setWidth(200.px)
+                        addThemeVariants(ButtonVariant.LUMO_PRIMARY)
+                        addClickListener {
+                            val _username = usernameField.value.trim()
+                            val _password = passwordField.value.trim()
+                            val t = authService.login(_username, _password)
+                            when (t) {
                                 "s" -> {
-                                    showSuccess("Успішна реєстрація")
+                                    showSuccess("Успішний вхід")
                                     user = authService.getLoggedInUser()
                                     close()
                                     updateUI()
                                 }
+                                "e:pnv" -> {
+                                    passwordField.isInvalid = true
+                                    passwordField.errorMessage = "невірний пароль"
+                                }
+                                "e:unf" -> {
+                                    usernameField.isInvalid = true
+                                    usernameField.errorMessage = "користувача не знайдено"
+                                }
                             }
                         }
                     }
+                    val signUp = Button("Зареєструватися").apply {
+                        setWidth(200.px)
+                        addClickListener {
+                            val _username = usernameField.value.trim()
+                            val _password = passwordField.value.trim()
+                            if(_username.length < 4) {
+                                usernameField.isInvalid = true
+                                usernameField.errorMessage = "ім'я користувача занадто коротке"
+                            } else if(_password.length < 8) {
+                                passwordField.isInvalid = true
+                                passwordField.errorMessage = "пароль занадто короткий"
+                            } else {
+                                val r = authService.register(_username, _password)
+                                when (r) {
+                                    "e:uax" -> {
+                                        usernameField.isInvalid = true
+                                        usernameField.errorMessage = "користувач з таким ім'ям вже існує"
+                                    }
+
+                                    "s" -> {
+                                        showSuccess("Успішна реєстрація")
+                                        user = authService.getLoggedInUser()
+                                        close()
+                                        updateUI()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    isCloseOnOutsideClick = false
+                    isCloseOnEsc = false
+                    add(VerticalLayout(usernameField, passwordField, logIn, signUp).apply {
+                        alignItems = Alignment.CENTER
+                        justifyContentMode = JustifyContentMode.CENTER
+                    })
+                    open()
                 }
-                isCloseOnOutsideClick = false
-                isCloseOnEsc = false
-                add(VerticalLayout(usernameField, passwordField, logIn, signUp).apply {
-                    alignItems = Alignment.CENTER
-                    justifyContentMode = JustifyContentMode.CENTER
-                })
-                open()
+            } else{
+                showSuccess("Виконано вхід зі збереженим токеном")
+                user = authService.getLoggedInUser()
             }
         }
 

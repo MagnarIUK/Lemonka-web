@@ -1,7 +1,9 @@
 package com.magnariuk.lemonkasubstoolw.data.api.database
 
 import com.magnariuk.lemonkasubstoolw.data.api.database.Characters.autoIncrement
+import com.magnariuk.lemonkasubstoolw.data.util.td
 import org.jetbrains.exposed.sql.*
+import kotlin.random.Random
 
 
 object Users: Table() {
@@ -88,11 +90,42 @@ data class Separator(
 
 object Settings: Table() {
     val id: Column<Int> = integer("id").autoIncrement()
+    val user: Column<Int> = integer("user").references(Users.id)
     val hideSelected: Column<Boolean> = bool("hide_selected")
     override val primaryKey = PrimaryKey(id, name = "settings_pk")
 }
 
 data class Setting(
     var id: Int,
-    var hideSelected: Boolean
+    var hideSelected: Boolean = true,
+    var user: Int
 )
+
+
+
+object Tokens: Table() {
+    val id: Column<Int> = integer("id").autoIncrement()
+    val user: Column<Int> = integer("user").references(Users.id)
+    val token: Column<String> = varchar("token", 50)
+    val valid_to: Column<Long> = long("valid_to")
+    override val primaryKey = PrimaryKey(id, name = "token_pk")
+
+    fun generateToken(length: Int = 50): String {
+        val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+        return (1..length)
+            .map { chars[Random.nextInt(chars.length)] }
+            .joinToString("")
+    }
+    fun getExpireTime(): Long {
+        return (System.currentTimeMillis() / 1000) + 5.td
+    }
+}
+
+data class Token(
+    val id: Int?,
+    val user: Int?,
+    val token: String?,
+    val valid_to: Long?,
+)
+
+

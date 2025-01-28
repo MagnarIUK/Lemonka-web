@@ -24,7 +24,7 @@ open class DatabaseController{
             Database.connect("jdbc:sqlite:$dbPath")
             transaction {
                 addLogger(StdOutSqlLogger)
-                SchemaUtils.create(Projects, Actors, Assignments, Characters, Separators, Settings)
+                SchemaUtils.create(Projects, Actors, Assignments, Characters, Separators, Settings, Tokens)
             }
         } catch (e: Exception) {
             println("Помилка підключення до бази даних: ${e.message}")
@@ -51,6 +51,22 @@ open class DatabaseController{
 
 open class DB(private val dbController: DatabaseController) {
 
+    fun createToken(user: Int): Token?{
+        return dbController.dbQuery {
+            Tokens.insert {
+                it[Tokens.user] = user
+                it[token] = generateToken()
+                it[valid_to] = getExpireTime()
+            }.resultedValues?.map { Format().toToken(it) }?.first()
+        }
+    }
+
+    fun getToken(token: String): Token? {
+        return dbController.dbQuery {
+            Tokens.selectAll().where { Tokens.token eq token }.firstOrNull()?.let { Format().toToken(it) }
+        }
+    }
+
     fun getUser(id: Int): User {
         return dbController.dbQuery {
             Users.selectAll().where { Users.id eq id }.map { Format().toUser(it) }.first()
@@ -71,8 +87,16 @@ open class DB(private val dbController: DatabaseController) {
         }
     }
 
+    fun createSetting(user: Int, setting: Setting?) {
+        return dbController.dbQuery {
+            Settings.insert {
+                it[Settings.user] = user
+                it[hideSelected] = setting?.hideSelected ?: true
+            }
+        }
+    }
 
-    fun getSettings(): Setting {
+    fun getSettings(user: Int): Setting {
         return dbController.dbQuery {
             Settings.selectAll().where(Settings.id eq 1).first().let { Format().toSetting(it) }
         }
@@ -283,7 +307,17 @@ open class Format {
     fun toSetting(row: ResultRow): Setting {
         return Setting(
             id = row[Settings.id],
-            hideSelected = row[Settings.hideSelected]
+            hideSelected = row[Settings.hideSelected],
+            user = row[Settings.user],
+        )
+    }
+
+    fun toToken(row: ResultRow): Token {
+        return Token(
+            id = row[Tokens.id],
+            token = row[Tokens.token],
+            user = row[Tokens.user],
+            valid_to = row[Tokens.valid_to],
         )
     }
 
