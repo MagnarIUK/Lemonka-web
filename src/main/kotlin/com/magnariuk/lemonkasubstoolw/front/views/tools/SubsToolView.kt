@@ -250,6 +250,8 @@ class SubsToolView(
                 })
             }
 
+            val charactersIconButton = Button("Картинки персонажів").apply {}
+
 
 
             val leftBar = VerticalLayout(
@@ -259,7 +261,7 @@ class SubsToolView(
                     alignItems = Alignment.CENTER
                     justifyContentMode = JustifyContentMode.CENTER
                 },
-                actorsGrid
+                actorsGrid,charactersIconButton
             ).apply {
                 width = 600.px
                 alignItems = Alignment.CENTER
@@ -284,7 +286,7 @@ class SubsToolView(
                 addValueChangeListener { event ->
                     val newValue = event.value
                     if (hideSelected != newValue) {
-                        hideSelected = newValue
+                        api.changeSetting(Setting(user=user!!.id, hideSelected=newValue, id=0))
                         updateUI()
                     }
                 }

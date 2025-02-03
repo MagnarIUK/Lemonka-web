@@ -64,7 +64,7 @@ class AuthService(
             if(isPasswordValid(user, password)){
                 session.setAttribute("user", user)
                 val t = db.createToken(user.id)
-                setCookie("token", t!!.token!!, 5.td)
+                setCookie("token", t!!.token!!, 30.td)
                 return "s"
             } else{
                 return "e:pnv"

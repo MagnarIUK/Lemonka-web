@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.magnariuk</groupId>
     <artifactId>LemonkaSubsToolW</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.1.1</version>
     <name>LemonkaSubsToolW</name>
     <description>LemonkaSubsToolW</description>
     <url/>
@@ -165,6 +165,12 @@
             <version>v4-rev614-1.18.0-rc</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/com.apollographql.apollo/apollo-runtime -->
+        <dependency>
+            <groupId>com.apollographql.apollo</groupId>
+            <artifactId>apollo-runtime</artifactId>
+            <version>4.1.1</version>
+        </dependency>
 
 
 

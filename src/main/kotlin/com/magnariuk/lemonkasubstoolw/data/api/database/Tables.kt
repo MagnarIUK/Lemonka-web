@@ -1,6 +1,6 @@
 package com.magnariuk.lemonkasubstoolw.data.api.database
 
-import com.magnariuk.lemonkasubstoolw.data.api.database.Characters.autoIncrement
+import com.magnariuk.lemonkasubstoolw.data.Classes.Ass
 import com.magnariuk.lemonkasubstoolw.data.util.td
 import org.jetbrains.exposed.sql.*
 import kotlin.random.Random
@@ -20,7 +20,7 @@ data class User(
     val userData: UserData?
 )
 data class UserData(
-    var valid: Boolean?
+    val savedSubtitles: MutableList<Ass> = mutableListOf(),
 )
 
 object Projects: Table() {
@@ -117,7 +117,7 @@ object Tokens: Table() {
             .joinToString("")
     }
     fun getExpireTime(): Long {
-        return (System.currentTimeMillis() / 1000) + 5.td
+        return (System.currentTimeMillis() / 1000) + 30.td
     }
 }
 
@@ -127,5 +127,11 @@ data class Token(
     val token: String?,
     val valid_to: Long?,
 )
+
+object META: Table("meta") {
+    val id: Column<Int> = integer("id")
+    val version: Column<Float> = float("version")
+    override val primaryKey = PrimaryKey(id, name = "meta_pk")
+}
 
 

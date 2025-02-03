@@ -10,6 +10,7 @@ class ApiService(
     val db = dbc.getDB()
 
     fun getSettings(user: User) = db.getSettings(user.id)
+    fun changeSetting(setting: Setting) = db.changeSetting(setting)
     fun createSetting(user: User, setting: Setting?) = db.createSetting(user.id, setting)
     fun getSeparators() = db.getSeparators()
     fun createProject(name: String, user: User) = db.createProject(name, user)

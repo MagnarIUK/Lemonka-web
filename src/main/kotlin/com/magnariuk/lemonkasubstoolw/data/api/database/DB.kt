@@ -11,11 +11,15 @@ import java.io.FileReader
 import java.io.IOException
 
 open class DatabaseController{
+    val CURRENT_VERSION = 2.3
 
     fun databaseExists(dbPath: String): Boolean {
         val file = File(dbPath)
         return file.exists() && !file.isDirectory
     }
+
+
+
 
     fun init() {
         val dbPath = System.getenv("DB_PATH")?: "cache.db"
@@ -36,6 +40,14 @@ open class DatabaseController{
             }
             !dbExists -> {
                 println("База даних створена і таблиці ініціалізовані")
+                transaction {
+                    val default_separators = listOf(";", ",", "and", "та")
+                    default_separators.forEach { sep ->
+                        Separators.insert {
+                            it[separator] = sep
+                        }
+                    }
+                }
             }
         }
     }
@@ -96,9 +108,25 @@ open class DB(private val dbController: DatabaseController) {
         }
     }
 
+    fun changeSetting(setting: Setting) {
+        dbController.dbQuery {
+            Settings.update({ Settings.user eq setting.user }) {
+                it[hideSelected] = setting.hideSelected
+            }
+        }
+    }
+
     fun getSettings(user: Int): Setting {
         return dbController.dbQuery {
-            Settings.selectAll().where(Settings.id eq 1).first().let { Format().toSetting(it) }
+            val s = Settings.selectAll().where(Settings.user eq user).map { Format().toSetting(it) }
+            if(s.isEmpty()){
+                Settings.insert {
+                    it[Settings.user] = user
+                    it[hideSelected] = true
+                }.resultedValues!!.first().let { Format().toSetting(it) }
+            } else{
+                return@dbQuery s.first()
+            }
         }
     }
 
