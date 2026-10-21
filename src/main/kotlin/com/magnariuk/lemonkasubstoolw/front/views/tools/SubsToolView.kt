@@ -47,7 +47,19 @@ class SubsToolView(
     private var user = authService.getLoggedInUser()
 
 
-    override fun beforeEnter(p0: BeforeEnterEvent?) {
+    override fun beforeEnter(event: BeforeEnterEvent?) {
+        if (user == null && authService.loginWithToken() == "s") {
+            user = authService.getLoggedInUser()
+            showSuccess("Виконано вхід зі збереженим токеном")
+        }
+        if (user == null) {
+            showError("Ви не автентифіковані")
+            showLoginDialog(authService) {
+                user = authService.getLoggedInUser()
+                updateUI()
+            }
+            return
+        }
         updateUI()
     }
 
@@ -506,15 +518,6 @@ class SubsToolView(
                 justifyContentMode = JustifyContentMode.CENTER
             }
             dynamicLayout.add(menuHolder)
-        }
-        if(user == null){
-            val aath = authService.loginWithToken()
-            if(aath != "s"){
-                showError("Ви не автентифіковані")
-            } else{
-                showSuccess("Виконано вхід зі збереженим токеном")
-                user = authService.getLoggedInUser()
-            }
         }
 
     }

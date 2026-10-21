@@ -20,7 +20,7 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout
 import org.springframework.beans.factory.annotation.Autowired
 
-const val VERSION = "0.3.2"
+const val VERSION = "0.3.4"
 
 class MainLayout(
     @Autowired private val authService: AuthService

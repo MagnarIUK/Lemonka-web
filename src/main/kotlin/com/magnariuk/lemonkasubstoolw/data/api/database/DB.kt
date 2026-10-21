@@ -110,8 +110,14 @@ open class DB(private val dbController: DatabaseController) {
 
     fun changeSetting(setting: Setting) {
         dbController.dbQuery {
-            Settings.update({ Settings.user eq setting.user }) {
+            val updated = Settings.update({ Settings.user eq setting.user }) {
                 it[hideSelected] = setting.hideSelected
+            }
+            if (updated == 0) {
+                Settings.insert {
+                    it[user] = setting.user
+                    it[hideSelected] = setting.hideSelected
+                }
             }
         }
     }
