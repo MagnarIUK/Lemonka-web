@@ -94,9 +94,9 @@ class SubsToolView(
 
             val chooseSubHolder = VerticalLayout(HorizontalLayout(uploader, projectSelector)
                 .apply {
-                alignItems = Alignment.CENTER
-                justifyContentMode = JustifyContentMode.CENTER
-            }, Button("Підтвердити").apply {
+                    alignItems = Alignment.CENTER
+                    justifyContentMode = JustifyContentMode.CENTER
+                }, Button("Підтвердити").apply {
                 onLeftClick {
                     if(ass != null) {
                         if(projectSelector.value != null) {
@@ -184,7 +184,8 @@ class SubsToolView(
             }
             dynamicLayout.add(chooseSubHolder)
         } else {
-            var hideSelected: Boolean = user?.let { api.getSettings(it).hideSelected } ?: true
+            val userSettings = user?.let { api.getSettings(it) }
+            val hideSelected: Boolean = userSettings?.hideSelected ?: true
             val actorsDataProvider = ListDataProvider(api.getActors(user))
             val actorsSearchBox = TextField().apply {
                 placeholder = "Актор..."
@@ -268,7 +269,6 @@ class SubsToolView(
                 justifyContentMode = JustifyContentMode.CENTER
             }
 
-            //cacheController.getCache()!!.projects.find { it.name == currentProject!!.name }!!.selected
             val assignedActorsDataProvider = ListDataProvider(api.getProjectAssignments(currentProject!!.id))
 
             val charactersSelectorActorSearchBox = TextField().apply {
@@ -286,7 +286,7 @@ class SubsToolView(
                 addValueChangeListener { event ->
                     val newValue = event.value
                     if (hideSelected != newValue) {
-                        api.changeSetting(Setting(user=user!!.id, hideSelected=newValue, id=0))
+                        api.changeSetting(Setting(user = user!!.id, hideSelected = newValue, id = userSettings?.id ?: 0))
                         updateUI()
                     }
                 }
@@ -303,7 +303,7 @@ class SubsToolView(
 
                     val characterChooser = MultiSelectComboBox<Character>().apply {
                         if(hideSelected){
-                    setItems(api.getProjectCharacters(currentProject!!.id).filter { it.actor == null || it.actor == assignment.actor })
+                            setItems(api.getProjectCharacters(currentProject!!.id).filter { it.actor == null || it.actor == assignment.actor })
                         } else{
                             setItems(api.getProjectCharacters(currentProject!!.id))
                         }
@@ -350,184 +350,124 @@ class SubsToolView(
                     api.getProjectAssignments(currentProject!!.id).forEach { assignment ->
                         val actor = api.getActor(assignment.actor)
                         val characters = api.getCharactersByActor(actor.id, currentProject!!.id)
-                        actors.add(com.magnariuk.lemonkasubstoolw.data.Classes.Actor(actor.actorName, characters.map { it.name }.toMutableList()))
+                        if (characters.isNotEmpty()) {
+                            actors.add(com.magnariuk.lemonkasubstoolw.data.Classes.Actor(actor.actorName, characters.map { it.name }.toMutableList()))
+                        }
+                    }
+
+                    if (actors.isEmpty()) {
+                        showError("Немає призначених персонажів для акторів")
+                        return@onLeftClick
                     }
 
                     val assParser = ParserIS()
                     val separs = api.getSeparators().map { it.separator }
                     val file = assParser.renameActors(ass!!, actors, separs)
-                    val dialog = Dialog().apply {
-                        headerTitle = "Завантажити готовий файл"
+                    if (file != null) {
+                        val dialog = Dialog().apply {
+                            headerTitle = "Завантажити готовий файл"
 
+                            val downloadButton = Button().apply {
+                                icon = Icon(VaadinIcon.DOWNLOAD)
+                                addThemeVariants(ButtonVariant.LUMO_ICON)
+                                addThemeVariants(ButtonVariant.LUMO_PRIMARY)
+                            }
+                            val downloadWrapper = FileDownloadWrapper(file)
+                            downloadWrapper.wrapComponent(downloadButton)
+                            add(NativeLabel(file.name), downloadWrapper)
+                        }
+                        dialog.open()
+                    } else {
+                        showError("Не вдалося створити файл")
+                    }
+                }
+            }
+
+            fun processAndShowDialog(
+                actors: List<com.magnariuk.lemonkasubstoolw.data.Classes.Actor>,
+                format: String,
+                assParser: ParserIS
+            ) {
+                val createdFiles: MutableMap<String, StreamResource> = mutableMapOf()
+                val separators = api.getSeparators().map { it.separator }
+
+                actors.forEach { actor ->
+                    if (actor.characterNames.isNotEmpty()) {
+                        val resource = when (format) {
+                            "srt" -> assParser.createSubRip("${actor.actorName}.srt", ass!!, actor.characterNames, separators)
+                            "ass" -> assParser.createAss("${actor.actorName}.ass", ass!!, actor.characterNames, separators)
+                            else -> null
+                        }
+                        if (resource != null) {
+                            createdFiles["${actor.actorName}.$format"] = resource
+                        }
+                    }
+                }
+
+                if (createdFiles.isEmpty()) {
+                    showError("Не знайдено субтитрів для обраних акторів або персонажів")
+                    return
+                }
+
+                val dialog = Dialog().apply {
+                    headerTitle = "Завантажити готові файли"
+                    val files = VerticalLayout()
+                    createdFiles.forEach { file ->
                         val downloadButton = Button().apply {
                             icon = Icon(VaadinIcon.DOWNLOAD)
-                            addThemeVariants(ButtonVariant.LUMO_ICON)
-                            addThemeVariants(ButtonVariant.LUMO_PRIMARY)
+                            addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_PRIMARY)
                         }
-                        val downloadWrapper = FileDownloadWrapper(file)
+                        val downloadWrapper = FileDownloadWrapper(file.value)
                         downloadWrapper.wrapComponent(downloadButton)
-                        add(NativeLabel(file!!.name), downloadWrapper)
+
+                        files.add(
+                            HorizontalLayout(NativeLabel(file.key), downloadWrapper)
+                        )
                     }
-                    dialog.open()
+                    add(files)
                 }
+                dialog.open()
             }
 
             val createButton = Button("Створити субтитри").apply {
                 addThemeVariants(ButtonVariant.LUMO_PRIMARY)
                 onLeftClick {
-                    val createdFiles: MutableMap<String, StreamResource> = mutableMapOf()
+                    if (selectFormat.value == null) {
+                        showError("Оберіть формат субтитрів")
+                        return@onLeftClick
+                    }
+
                     val actors: MutableList<com.magnariuk.lemonkasubstoolw.data.Classes.Actor> = mutableListOf()
                     api.getProjectAssignments(currentProject!!.id).forEach { assignment ->
                         val actor = api.getActor(assignment.actor)
                         val characters = api.getCharactersByActor(actor.id, currentProject!!.id)
-                        actors.add(com.magnariuk.lemonkasubstoolw.data.Classes.Actor(actor.actorName, characters.map { it.name }.toMutableList()))
-                    }
-                    val assParser = ParserIS()
-
-                    if(selectFormat.value != null){
-                        when (selectFormat.value.format){
-                            "srt" -> {
-                                actors.forEach { actor ->
-                                    val trier = assParser.createSubRip("${actor.actorName}.srt", ass!!, actor.characterNames, api.getSeparators().map { it.separator })
-                                    if(trier != null){
-                                        createdFiles["${actor.actorName}.srt"] = trier
-                                    }
-                                }
-                                val dialog = Dialog().apply {
-                                    headerTitle = "Завантажити готові файли"
-                                    val files = VerticalLayout().apply {}
-                                    createdFiles.forEach { file ->
-                                        val downloadButton = Button().apply {
-                                            icon = Icon(VaadinIcon.DOWNLOAD)
-                                            addThemeVariants(ButtonVariant.LUMO_ICON)
-                                            addThemeVariants(ButtonVariant.LUMO_PRIMARY)
-                                        }
-                                        val downloadWrapper = FileDownloadWrapper(file.value)
-                                        downloadWrapper.wrapComponent(downloadButton)
-
-                                        files.add(
-                                            HorizontalLayout(NativeLabel(file.key), downloadWrapper)
-                                        )
-                                    }
-                                    add(files)
-                                }
-                                dialog.open()
-                            }
-                            "ass" -> {
-                                actors.forEach { actor ->
-                                    val trier = assParser.createAss("${actor.actorName}.ass", ass!!, actor.characterNames, api.getSeparators().map { it.separator })
-                                    if(trier != null){
-                                        createdFiles["${actor.actorName}.ass"] = trier
-                                    }
-                                }
-                                val dialog = Dialog().apply {
-                                    headerTitle = "Завантажити готові файли"
-                                    val files = VerticalLayout().apply {}
-                                    createdFiles.forEach { file ->
-                                        val downloadButton = Button().apply {
-                                            icon = Icon(VaadinIcon.DOWNLOAD)
-                                            addThemeVariants(ButtonVariant.LUMO_ICON)
-                                            addThemeVariants(ButtonVariant.LUMO_PRIMARY)
-                                        }
-                                        val downloadWrapper = FileDownloadWrapper(file.value)
-                                        downloadWrapper.wrapComponent(downloadButton)
-
-                                        files.add(
-                                            HorizontalLayout(NativeLabel(file.key), downloadWrapper)
-                                        )
-                                    }
-                                    add(files)
-                                }
-                                dialog.open()
-                            }
+                        if (characters.isNotEmpty()) {
+                            actors.add(com.magnariuk.lemonkasubstoolw.data.Classes.Actor(actor.actorName, characters.map { it.name }.toMutableList()))
                         }
-
-
-
-
-                    } else{
-                        showError("Оберіть формат субтитрів")
                     }
 
-
+                    processAndShowDialog(actors, selectFormat.value.format, ParserIS())
                 }
             }
+
             val separateButton = Button("Розділити по персонажам").apply {
                 addThemeVariants(ButtonVariant.LUMO_TERTIARY)
                 onLeftClick {
-                    val createdFiles: MutableMap<String, StreamResource> = mutableMapOf()
+                    if (selectFormat.value == null) {
+                        showError("Оберіть формат субтитрів")
+                        return@onLeftClick
+                    }
+
                     val actors: MutableList<com.magnariuk.lemonkasubstoolw.data.Classes.Actor> = mutableListOf()
                     api.getProjectAssignments(currentProject!!.id).forEach { assignment ->
                         val actor = api.getActor(assignment.actor)
                         val characters = api.getCharactersByActor(actor.id, currentProject!!.id)
-                        actors.add(com.magnariuk.lemonkasubstoolw.data.Classes.Actor(actor.actorName, characters.map { it.name }.toMutableList()))
-                    }
-                    val assParser = ParserIS()
-
-                    if(selectFormat.value != null){
-                        when (selectFormat.value.format){
-                            "srt" -> {
-                                actors.forEach { actor ->
-                                    val trier = assParser.createSubRip("${actor.actorName}.srt", ass!!, actor.characterNames, api.getSeparators().map { it.separator })
-                                    if(trier != null){
-                                        createdFiles["${actor.actorName}.srt"] = trier
-                                    }
-                                }
-                                val dialog = Dialog().apply {
-                                    headerTitle = "Завантажити готові файли"
-                                    val files = VerticalLayout().apply {}
-                                    createdFiles.forEach { file ->
-                                        val downloadButton = Button().apply {
-                                            icon = Icon(VaadinIcon.DOWNLOAD)
-                                            addThemeVariants(ButtonVariant.LUMO_ICON)
-                                            addThemeVariants(ButtonVariant.LUMO_PRIMARY)
-                                        }
-                                        val downloadWrapper = FileDownloadWrapper(file.value)
-                                        downloadWrapper.wrapComponent(downloadButton)
-
-                                        files.add(
-                                            HorizontalLayout(NativeLabel(file.key), downloadWrapper)
-                                        )
-                                    }
-                                    add(files)
-                                }
-                                dialog.open()
-                            }
-                            "ass" -> {
-                                actors.forEach { actor ->
-                                    val trier = assParser.createAss("${actor}.ass", ass!!, actor.characterNames, api.getSeparators().map { it.separator })
-                                    if(trier != null){
-                                        createdFiles["${actor}.ass"] = trier
-                                    }
-                                }
-                                val dialog = Dialog().apply {
-                                    headerTitle = "Завантажити готові файли"
-                                    val files = VerticalLayout().apply {}
-                                    createdFiles.forEach { file ->
-                                        val downloadButton = Button().apply {
-                                            icon = Icon(VaadinIcon.DOWNLOAD)
-                                            addThemeVariants(ButtonVariant.LUMO_ICON)
-                                            addThemeVariants(ButtonVariant.LUMO_PRIMARY)
-                                        }
-                                        val downloadWrapper = FileDownloadWrapper(file.value)
-                                        downloadWrapper.wrapComponent(downloadButton)
-
-                                        files.add(
-                                            HorizontalLayout(NativeLabel(file.key), downloadWrapper)
-                                        )
-                                    }
-                                    add(files)
-                                }
-                                dialog.open()
-                            }
+                        if (characters.isNotEmpty()) {
+                            actors.add(com.magnariuk.lemonkasubstoolw.data.Classes.Actor(actor.actorName, characters.map { it.name }.toMutableList()))
                         }
-
-
-
-
-                    } else{
-                        showError("Оберіть формат субтитрів")
                     }
+
+                    processAndShowDialog(actors, selectFormat.value.format, ParserIS())
                 }
             }
 
@@ -539,10 +479,10 @@ class SubsToolView(
                     onLeftClick {
                         updateUI()
                     }
-                },charactersSelectorActorSearchBox, hideSelectedCharacters),
+                }, charactersSelectorActorSearchBox, hideSelectedCharacters),
                 charactersGrid,
                 VerticalLayout(
-                    HorizontalLayout(selectFormat,createButton, separateButton).apply {
+                    HorizontalLayout(selectFormat, createButton, separateButton).apply {
                         alignItems = Alignment.CENTER
                         justifyContentMode = JustifyContentMode.CENTER
                     },
@@ -560,8 +500,6 @@ class SubsToolView(
                 alignItems = Alignment.CENTER
                 justifyContentMode = JustifyContentMode.CENTER
             }
-
-
 
             val menuHolder = HorizontalLayout(leftBar, rightBar).apply {
                 alignItems = Alignment.START
