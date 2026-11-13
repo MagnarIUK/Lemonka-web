@@ -1,0 +1,12 @@
+ktor:
+  application:
+    modules:
+      - com.magnariuk.lemonka.ApplicationKt.module
+  deployment:
+    host: 0.0.0.0
+    port: "$PORT:8000"
+
+lemonka:
+  dbPath: "$DB_PATH:cache.db"
+  # Public address for invite links when behind a reverse proxy, e.g. https://tools.example.com
+  publicUrl: "$PUBLIC_URL:"

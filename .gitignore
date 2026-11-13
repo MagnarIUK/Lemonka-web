@@ -1,9 +1,13 @@
 node_modules
 HELP.md
-target/
-!.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+
+### Gradle ###
+.gradle/
+.kotlin/
+!gradle/wrapper/gradle-wrapper.jar
+
+### App data ###
+*.db
 cache.json
 
 ### STS ###
@@ -33,3 +37,5 @@ build/
 
 ### VS Code ###
 .vscode/
+*.db.backup-*
+/data/

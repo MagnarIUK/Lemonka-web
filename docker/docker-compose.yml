@@ -1,0 +1,16 @@
+# Example for the server. Put the contents of build/docker/ into ./java next to this file.
+name: lemonka
+services:
+    lemonka:
+        image: lemonka
+        build:
+            context: java
+        restart: unless-stopped
+        ports:
+            - "8052:8000"
+        environment:
+            - DB_PATH=/opt/app/data/cache.db
+            # Public address for invite links, share links and the CSV:
+            # - PUBLIC_URL=https://tools.example.com
+        volumes:
+            - ./data:/opt/app/data
