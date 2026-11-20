@@ -1,5 +1,6 @@
 package com.magnariuk.lemonka.ui.components
 
+import com.magnariuk.lemonka.ui.core.Breakpoints
 import com.magnariuk.lemonka.ui.core.Styled
 import com.magnariuk.lemonka.ui.core.tc
 import com.magnariuk.lemonka.ui.core.v
@@ -58,6 +59,8 @@ object TextFieldStyle : Styled {
             put("box-shadow", "0 0 0 3px ${v("primary-30")}")
         }
         rule(".field-invalid .input") { backgroundColor = tc("error-10"); borderColor = tc("error") }
+        // iOS Safari zooms into any input smaller than 16px, so phones get 16px.
+        media(Breakpoints.PHONE) { rule(".input, .select") { fontSize = 16.px; height = 42.px } }
         rule(".field-error") {
             display = Display.flex; alignItems = Align.center; gap = 4.px
             fontSize = 0.8125.rem; color = tc("error")

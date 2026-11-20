@@ -39,8 +39,12 @@ object Stylesheet {
         SheetStyle,
     )
 
-    /** Built once at startup. */
+    /**
+     * Built once at startup. Each component is rendered on its own and the results are joined in order:
+     * kotlin-css would otherwise move every @media block of one big builder ahead of later normal rules,
+     * letting those rules silently override the phone/tablet styles.
+     */
     val css: String by lazy {
-        CssBuilder(allowClasses = false).apply { registry.forEach { with(it) { styles() } } }.toString()
+        registry.joinToString("\n") { CssBuilder(allowClasses = false).apply { with(it) { styles() } }.toString() }
     }
 }

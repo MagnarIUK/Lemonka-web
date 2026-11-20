@@ -192,6 +192,14 @@ object SheetStyle : Styled {
             put("box-shadow", v("shadow-s")); put("animation", "fade-in .2s ${v("ease")}")
         }
 
+        media(Breakpoints.PHONE) {
+            rule(".share-box") { minWidth = 0.px; width = 100.pct; flexWrap = FlexWrap.wrap }
+            rule(".sheet-actions") { flexDirection = FlexDirection.column; alignItems = Align.stretch }
+            rule(".share-field") { maxWidth = 100.pct }
+            rule(".sheet-name") { width = LinearDimension.auto }
+            rule(".pills") { flexWrap = FlexWrap.nowrap; overflowX = Overflow.auto; put("scrollbar-width", "none"); paddingBottom = 4.px }
+            rule(".pill") { whiteSpace = WhiteSpace.nowrap; flexShrink = 0.0 }
+        }
         rule(".thumb") {
             display = Display.flex; width = 44.px; height = 44.px; borderRadius = LinearDimension(v("radius-s"))
             put("object-fit", "cover"); put("box-shadow", v("shadow-s")); put("animation", "pop-in .25s ${v("ease")}")

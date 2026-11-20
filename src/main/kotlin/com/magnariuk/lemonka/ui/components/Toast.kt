@@ -39,6 +39,10 @@ object ToastStyle : Styled {
             put("animation", "slide-in .25s ${v("ease")}, fade-out .4s ease 4s forwards")
         }
         rule(".toast span") { color = tc("text") }
+        media(Breakpoints.PHONE) {
+            rule("#toasts") { left = 12.px; right = 12.px; put("bottom", "calc(84px + env(safe-area-inset-bottom))") }
+            rule(".toast") { minWidth = 0.px; maxWidth = 100.pct }
+        }
         rule(".toast-success") { color = tc("success") }
         rule(".toast-error") { color = tc("error") }
         rule(".toast-info") { color = tc("primary") }

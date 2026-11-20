@@ -257,7 +257,7 @@ object AdminStyle : Styled {
             display = Display.grid; gap = 12.px; alignItems = Align.end
             put("grid-template-columns", "minmax(140px, 1fr) minmax(140px, 1fr) minmax(200px, 2fr) auto")
         }
-        media("(max-width: 860px)") { rule(".invite-form") { put("grid-template-columns", "1fr") } }
+        media(Breakpoints.NARROW) { rule(".invite-form") { put("grid-template-columns", "1fr") } }
 
         rule(".code") {
             put("font-family", "ui-monospace, 'JetBrains Mono', Consolas, monospace")
@@ -269,6 +269,12 @@ object AdminStyle : Styled {
             put("user-select", "all")
         }
         rule(".link-input") { height = 28.px; fontSize = 0.75.rem; marginTop = 6.px; minWidth = 260.px; put("user-select", "all") }
+        media(Breakpoints.PHONE) {
+            rule(".link-input") { minWidth = 0.px; width = 100.pct }
+            rule(".tabs") { overflowX = Overflow.auto; put("scrollbar-width", "none") }
+            rule(".tab") { whiteSpace = WhiteSpace.nowrap; flexShrink = 0.0 }
+            rule(".admin-head h1") { fontSize = 1.3.rem }
+        }
         rule(".row-new") { put("animation", "row-flash 1.6s ${v("ease")}") }
         rule("@keyframes row-flash") { rule("from") { backgroundColor = tc("primary-30") } }
         rule(".table .select") { height = 32.px; width = LinearDimension.auto }

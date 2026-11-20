@@ -175,19 +175,10 @@ object ProfileStyle : Styled {
     override fun CssBuilder.styles() {
         rule(".profile-header") { display = Display.flex; alignItems = Align.center; gap = 16.px; marginBottom = 24.px }
         rule(".avatar-l") { width = 64.px; height = 64.px; fontSize = 1.6.rem; put("box-shadow", "0 8px 20px ${v("primary-30")}") }
-        rule(".profile-grid") {
-            display = Display.grid; gap = 16.px; alignItems = Align.start
-            put("grid-template-columns", "minmax(0, 1fr) minmax(0, 1.4fr)")
-        }
-        rule(".profile-grid > .col > .card:nth-child(2)") { put("animation-delay", ".04s") }
-        rule(".profile-grid > .col > .card:nth-child(3)") { put("animation-delay", ".08s") }
-        rule(".grow") { flexGrow = 1.0; minWidth = 0.px }
+
         rule(".small") { fontSize = 0.8125.rem }
         rule(".actor-add") { marginBottom = 12.px }
         rule(".danger-card") { put("border", "1px solid ${v("error-10")}") }
         rule(".danger-card h3") { color = tc("error") }
-        media("(max-width: 860px)") {
-            rule(".profile-grid") { put("grid-template-columns", "1fr") }
-        }
     }
 }

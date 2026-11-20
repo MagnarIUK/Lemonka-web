@@ -52,7 +52,7 @@ object HomeStyle : Styled {
         rule(".home-hero p") { margin = Margin(6.px, 0.px, 0.px) }
         rule(".home-grid") {
             display = Display.grid; gap = 16.px
-            put("grid-template-columns", "repeat(auto-fill, minmax(300px, 1fr))")
+            put("grid-template-columns", "repeat(auto-fill, minmax(min(300px, 100%), 1fr))")
         }
         rule(".home-grid .tile:nth-child(2)") { put("animation-delay", ".05s") }
         rule(".home-grid .tile:nth-child(3)") { put("animation-delay", ".1s") }

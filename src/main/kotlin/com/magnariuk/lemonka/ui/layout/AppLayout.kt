@@ -22,7 +22,8 @@ fun HTML.AppLayout(title: String, shell: Shell, content: MAIN.() -> Unit) {
     lang = "uk"
     head {
         meta(charset = "utf-8")
-        meta(name = "viewport", content = "width=device-width, initial-scale=1")
+        meta(name = "viewport", content = "width=device-width, initial-scale=1, viewport-fit=cover")
+        meta(name = "theme-color", content = "#ffffff")
         meta(name = "htmx-config", content = """{"globalViewTransitions":true,"scrollIntoViewOnBoost":false}""")
         title { +"$title · ${AppInfo.NAME}" }
         link(rel = "icon", href = "/static/favicon.svg", type = "image/svg+xml")
@@ -30,7 +31,7 @@ fun HTML.AppLayout(title: String, shell: Shell, content: MAIN.() -> Unit) {
         script(src = "/static/js/htmx.min.js") { defer = true }
         script(src = "/static/js/dnd.js?v=${AppInfo.VERSION}") { defer = true }
     }
-    body {
+    body(if (shell.user != null) "has-nav" else null) {
         hxBoost()
         TopBar(shell)
         main("container page") { content() }
@@ -142,9 +143,35 @@ object AppLayoutStyle : Styled {
         rule(".menu-danger") { color = tc("error") }
         rule(".menu form") { margin = Margin(0.px) }
 
-        media("(max-width: 720px)") {
-            rule(".nav-text, .brand-by") { display = Display.none }
-            rule(".topbar-inner") { gap = 10.px }
+        // Phones: the same <nav> becomes a bottom tab bar (icon above a short label), like a native app.
+        media(Breakpoints.PHONE) {
+            rule(".container") { padding = Padding(0.px, 14.px) }
+            rule(".page") { padding = Padding(18.px, 14.px, 32.px) }
+            rule("body.has-nav .page") { put("padding-bottom", "calc(88px + env(safe-area-inset-bottom))") }
+            // When the browser scrolls something into view (focusing an input, etc.), keep it clear of the tab bar.
+            rule("html:has(body.has-nav)") { put("scroll-padding-bottom", "calc(84px + env(safe-area-inset-bottom))"); put("scroll-padding-top", "64px") }
+            rule(".topbar-inner") { height = 54.px; gap = 10.px }
+            // backdrop-filter makes the top bar the containing block for position:fixed children,
+            // which would pin the bottom nav inside the top bar. Solid background on phones instead.
+            rule(".topbar") { put("backdrop-filter", "none"); backgroundColor = tc("base") }
+            rule(".brand .badge, .brand-by") { display = Display.none }
+            rule(".brand-name") { fontSize = 1.15.rem }
+            rule(".menu-trigger .nav-text") { display = Display.none }
+            rule(".nav") {
+                position = Position.fixed; left = 0.px; right = 0.px; bottom = 0.px; zIndex = 30
+                gap = 0.px; justifyContent = JustifyContent.spaceAround
+                padding = Padding(6.px, 6.px, 6.px, 6.px)
+                put("padding-bottom", "calc(6px + env(safe-area-inset-bottom))")
+                backgroundColor = Color("hsla(0, 0%, 100%, 0.94)")
+                put("backdrop-filter", "saturate(1.4) blur(10px)")
+                put("box-shadow", "0 -1px 0 ${v("contrast-10")}")
+            }
+            rule(".nav-link") {
+                flexDirection = FlexDirection.column; gap = 2.px; flexGrow = 1.0; flexBasis = FlexBasis("0")
+                padding = Padding(6.px, 4.px); fontSize = 0.6875.rem; textAlign = TextAlign.center; minWidth = 0.px
+            }
+            rule(".nav-link .icon") { fontSize = 1.3.rem }
+            rule(".nav-link .nav-text") { maxWidth = 100.pct; overflow = Overflow.hidden; textOverflow = TextOverflow.ellipsis; whiteSpace = WhiteSpace.nowrap }
         }
     }
 }

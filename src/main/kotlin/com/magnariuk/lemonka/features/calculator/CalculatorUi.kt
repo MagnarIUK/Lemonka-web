@@ -14,7 +14,7 @@ fun FlowContent.CalculatorPage(projects: List<Project>) {
         h1 { +"Калькулятор слів" }
         p("muted") { +"Порахуйте репліки, слова й числа для обраних персонажів у файлах .srt та .ass" }
     }
-    div("calc-grid") {
+    Columns(1, 1.3) {
         Card("Що рахуємо") {
             form {
                 hxPost(CalculatorFeature.PATH); hxEncoding("multipart/form-data")
@@ -88,17 +88,12 @@ object CalculatorStyle : Styled {
     override fun CssBuilder.styles() {
         rule(".page-title") { marginBottom = 20.px }
         rule(".page-title p") { margin = Margin(6.px, 0.px, 0.px) }
-        rule(".calc-grid") {
-            display = Display.grid; gap = 16.px; alignItems = Align.start
-            put("grid-template-columns", "minmax(0, 1fr) minmax(0, 1.3fr)")
-        }
-        media("(max-width: 900px)") { rule(".calc-grid") { put("grid-template-columns", "1fr") } }
         rule(".char-scroll") {
             maxHeight = 240.px; overflowY = Overflow.auto; padding = Padding(4.px)
             put("border", "1px solid ${v("contrast-10")}"); borderRadius = LinearDimension(v("radius-s"))
         }
         rule(".stats") { display = Display.grid; gap = 10.px; put("grid-template-columns", "repeat(4, minmax(0, 1fr))"); marginBottom = 12.px }
-        media("(max-width: 560px)") { rule(".stats") { put("grid-template-columns", "repeat(2, minmax(0, 1fr))") } }
+        media(Breakpoints.PHONE) { rule(".stats") { put("grid-template-columns", "repeat(2, minmax(0, 1fr))") } }
         rule(".stat") {
             padding = Padding(14.px); borderRadius = LinearDimension(v("radius-m")); backgroundColor = tc("contrast-5")
             put("animation", "pop-in .3s ${v("ease")} both")

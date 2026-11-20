@@ -22,7 +22,7 @@ fun FlowContent.StartPage(projects: List<Project>, files: Map<Int, String>, erro
         h1 { +"Розділення субтитрів" }
         p("muted") { +"Завантажте .ass, призначте акторам персонажів - і отримайте окремі файли для кожного." }
     }
-    div("calc-grid") {
+    Columns(1, 1.3) {
         Card("Новий файл") {
             form {
                 hxPost(P); hxEncoding("multipart/form-data"); hxTarget("this"); hxSwap("none")
@@ -82,11 +82,13 @@ fun FlowContent.WorkspacePage(w: Workspace) {
         }
         FileBox(w)
     }
-    div("ws-grid") {
-        ActorsPanel(w, "")
-        AssignmentsPanel(w)
+    Column(gap = 16) {
+        Columns(1, 2) {
+            ActorsPanel(w, "")
+            AssignmentsPanel(w)
+        }
+        ExportCard(w)
     }
-    ExportCard(w)
 }
 
 private fun FlowContent.FileBox(w: Workspace) = form(classes = "file-box") {
@@ -292,11 +294,6 @@ object SubtitlesStyle : Styled {
         rule(".file-box .tile-icon") { width = 38.px; height = 38.px; fontSize = 18.px }
         rule(".visually-hidden") { position = Position.absolute; width = 1.px; height = 1.px; opacity = 0; overflow = Overflow.hidden }
 
-        rule(".ws-grid") {
-            display = Display.grid; gap = 16.px; alignItems = Align.start; marginBottom = 16.px
-            put("grid-template-columns", "minmax(260px, 1fr) minmax(0, 2fr)")
-        }
-        media("(max-width: 900px)") { rule(".ws-grid") { put("grid-template-columns", "1fr") } }
 
         rule(".actor-list") { display = Display.flex; flexDirection = FlexDirection.column; gap = 2.px; marginTop = 10.px; maxHeight = 520.px; overflowY = Overflow.auto }
         rule(".actor-row") {
@@ -328,7 +325,14 @@ object SubtitlesStyle : Styled {
             display = Display.grid; gap = 12.px; alignItems = Align.end
             put("grid-template-columns", "minmax(220px, 1.4fr) repeat(3, auto)")
         }
-        media("(max-width: 900px)") { rule(".export-grid") { put("grid-template-columns", "1fr") } }
+        media(Breakpoints.NARROW) { rule(".export-grid") { put("grid-template-columns", "1fr") } }
+        media(Breakpoints.PHONE) {
+            rule(".file-box") { minWidth = 0.px; width = 100.pct }
+            rule(".assign-row") { flexWrap = FlexWrap.wrap; gap = 8.px }
+            rule(".assign-actor") { width = LinearDimension.auto; flexGrow = 1.0 }
+            rule(".assign-row .chips") { put("order", "3"); flexBasis = FlexBasis("100%") }
+            rule(".ws-tools .btn") { flexGrow = 1.0 }
+        }
         rule(".export-files") { display = Display.flex; flexDirection = FlexDirection.column; gap = 4.px }
         rule(".export-file") {
             display = Display.flex; alignItems = Align.center; gap = 10.px; padding = Padding(10.px, 12.px)

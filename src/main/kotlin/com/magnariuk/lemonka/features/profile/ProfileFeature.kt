@@ -29,7 +29,7 @@ object ProfileFeature : Feature {
                 val actors = ActorRepository.overview(user.id)
                 call.respondPage("Профіль") {
                     ProfileHeader(user, inviter?.username)
-                    div("profile-grid") {
+                    Columns(1, 1.4) {
                         Column(gap = 16) {
                             SettingsCard(settings, sessions)
                             PasswordCard()

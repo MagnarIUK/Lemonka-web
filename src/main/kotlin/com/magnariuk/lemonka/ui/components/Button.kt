@@ -1,5 +1,6 @@
 package com.magnariuk.lemonka.ui.components
 
+import com.magnariuk.lemonka.ui.core.Breakpoints
 import com.magnariuk.lemonka.ui.core.Styled
 import com.magnariuk.lemonka.ui.core.tc
 import com.magnariuk.lemonka.ui.core.v
@@ -76,6 +77,13 @@ object ButtonStyle : Styled {
         rule(".btn-danger") { backgroundColor = tc("error-10"); color = tc("error") }
         rule(".btn-danger:hover") { backgroundColor = tc("error"); color = Color.white }
 
+        // Phones: bigger touch targets.
+        media(Breakpoints.PHONE) {
+            rule(".btn") { height = 42.px }
+            rule(".btn-icon") { width = 42.px }
+            rule(".btn-small") { height = 36.px; padding = Padding(0.px, 12.px) }
+            rule(".btn-small.btn-icon") { width = 36.px; padding = Padding(0.px) }
+        }
         // Loading spinner, shown automatically while an HTMX request from this button is in flight
         rule(".btn-spinner") {
             display = Display.none

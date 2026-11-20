@@ -35,7 +35,16 @@ fun HTMLTag.uploadDropZone() {
 
 object DragDropStyle : Styled {
     override fun CssBuilder.styles() {
-        rule("[data-drag]") { cursor = Cursor.grab; userSelect = UserSelect.none }
+        rule("[data-drag]") {
+            cursor = Cursor.grab; userSelect = UserSelect.none
+            put("-webkit-user-select", "none"); put("-webkit-touch-callout", "none") // long-press is for dragging
+        }
+        // The copy that follows the finger during a touch drag.
+        rule(".drag-ghost") {
+            position = Position.fixed; left = 0.px; top = 0.px; zIndex = 200
+            put("pointer-events", "none"); opacity = 0.92; put("box-shadow", v("shadow-l"))
+            put("transition", "none")
+        }
         rule("[data-drag]:active") { cursor = Cursor.grabbing }
         rule(".dragging") { opacity = 0.35; transform { scale(0.95) } }
         rule("[data-drop]") {

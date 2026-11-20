@@ -20,3 +20,11 @@ fun v(name: String) = "var(--$name)"
 
 /** A theme color as a typed kotlin-css [Color]. */
 fun tc(name: String) = Color(v(name))
+
+/** Screen sizes. Components adapt themselves at these widths, so pages never need mobile versions. */
+object Breakpoints {
+    /** Phones: bottom tab bar, tables as cards, dialogs as bottom sheets. */
+    const val PHONE = "(max-width: 720px)"
+    /** Tablets and narrow windows: side-by-side columns stack. */
+    const val NARROW = "(max-width: 900px)"
+}

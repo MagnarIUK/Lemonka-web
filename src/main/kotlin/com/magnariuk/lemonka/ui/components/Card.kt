@@ -1,5 +1,6 @@
 package com.magnariuk.lemonka.ui.components
 
+import com.magnariuk.lemonka.ui.core.Breakpoints
 import com.magnariuk.lemonka.ui.core.Styled
 import com.magnariuk.lemonka.ui.core.tc
 import com.magnariuk.lemonka.ui.core.v
@@ -54,7 +55,11 @@ object CardStyle : Styled {
             justifyContent = JustifyContent.spaceBetween
             marginBottom = 14.px
         }
-        rule(".card-actions") { display = Display.flex; gap = 8.px }
+        rule(".card-actions") { display = Display.flex; gap = 8.px; flexWrap = FlexWrap.wrap }
+        media(Breakpoints.PHONE) {
+            rule(".card") { padding = Padding(16.px) }
+            rule(".card-header") { flexWrap = FlexWrap.wrap }
+        }
 
         rule(".tile") {
             display = Display.flex; alignItems = Align.center; gap = 16.px

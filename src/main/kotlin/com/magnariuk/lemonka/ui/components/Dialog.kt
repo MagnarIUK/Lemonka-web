@@ -71,6 +71,21 @@ object DialogStyle : Styled {
             display = Display.flex; alignItems = Align.center; justifyContent = JustifyContent.spaceBetween
             padding = Padding(18.px, 20.px, 8.px, 20.px)
         }
+        // Phones: a bottom sheet that slides up, full width, easy to reach with a thumb.
+        media(Breakpoints.PHONE) {
+            rule(".modal") { alignItems = Align.flexEnd; padding = Padding(0.px) }
+            rule(".modal-panel, .modal-wide") {
+                maxWidth = 100.pct; maxHeight = 92.vh
+                put("border-radius", "${v("radius-l")} ${v("radius-l")} 0 0")
+                put("padding-bottom", "env(safe-area-inset-bottom)")
+                put("animation", "sheet-up .28s ${v("ease")}")
+            }
+            rule(".modal-panel::before") {
+                put("content", "''"); display = Display.block; width = 40.px; height = 4.px; borderRadius = 2.px
+                backgroundColor = tc("contrast-20"); margin = Margin(8.px, LinearDimension.auto, 0.px)
+            }
+        }
+        rule("@keyframes sheet-up") { rule("from") { transform { translateY(100.pct) } } }
         rule(".modal-body") { padding = Padding(8.px, 20.px, 20.px); overflowY = Overflow.auto }
         rule(".modal-footer") {
             display = Display.flex; justifyContent = JustifyContent.flexEnd; gap = 8.px
