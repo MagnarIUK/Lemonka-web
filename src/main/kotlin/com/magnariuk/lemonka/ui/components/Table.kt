@@ -5,7 +5,6 @@ import com.magnariuk.lemonka.ui.core.Styled
 import com.magnariuk.lemonka.ui.core.tc
 import com.magnariuk.lemonka.ui.core.v
 import kotlinx.css.*
-import kotlinx.css.properties.*
 import kotlinx.html.*
 
 /**

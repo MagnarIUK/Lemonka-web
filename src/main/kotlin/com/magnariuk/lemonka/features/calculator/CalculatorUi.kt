@@ -5,7 +5,6 @@ import com.magnariuk.lemonka.subs.CountReport
 import com.magnariuk.lemonka.ui.components.*
 import com.magnariuk.lemonka.ui.core.*
 import kotlinx.css.*
-import kotlinx.css.properties.*
 import kotlinx.html.*
 import java.util.Base64
 

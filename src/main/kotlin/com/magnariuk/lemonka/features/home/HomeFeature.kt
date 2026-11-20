@@ -11,7 +11,6 @@ import com.magnariuk.lemonka.web.respondPage
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.css.*
-import kotlinx.css.properties.*
 import kotlinx.html.*
 
 /** One tile on the home page. Tool features register theirs in [HomeFeature.tools]. */

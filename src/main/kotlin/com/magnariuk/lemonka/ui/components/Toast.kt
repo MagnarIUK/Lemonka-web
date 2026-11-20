@@ -2,7 +2,6 @@ package com.magnariuk.lemonka.ui.components
 
 import com.magnariuk.lemonka.ui.core.*
 import kotlinx.css.*
-import kotlinx.css.properties.*
 import kotlinx.html.*
 
 enum class ToastTone(val css: String, val icon: Icon) {

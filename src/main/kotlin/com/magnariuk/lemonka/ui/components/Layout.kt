@@ -3,7 +3,6 @@ package com.magnariuk.lemonka.ui.components
 import com.magnariuk.lemonka.ui.core.Breakpoints
 import com.magnariuk.lemonka.ui.core.Styled
 import kotlinx.css.*
-import kotlinx.css.properties.*
 import kotlinx.html.DIV
 import kotlinx.html.FlowContent
 import kotlinx.html.div

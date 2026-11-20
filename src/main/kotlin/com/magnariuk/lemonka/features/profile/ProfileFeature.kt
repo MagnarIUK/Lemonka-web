@@ -12,7 +12,6 @@ import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
-import kotlinx.html.div
 
 /** The user's own page: account, settings, and everything they own, with delete buttons. */
 object ProfileFeature : Feature {
